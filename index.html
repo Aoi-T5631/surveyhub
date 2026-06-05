@@ -610,10 +610,10 @@ function surveyCardHTML(s){
   const dl=s.deadline?`締め切り：${s.deadline} ・ `:'';
   const info=s.type==='date'?`${s.dates.length}日程`:`${s.questions.length}問`;
   let acts='';
-  if(!answered) acts+=`<button class="btn-sm" onclick="openAnswer(${s.id},'surveys')">回答する</button>`;
+  if(!answered) acts+=`<button class="btn-sm" onclick="openAnswer('${s.id}','surveys')">回答する</button>`;
   if(owner){
-    acts+=` <button class="btn-sm" onclick="openEdit(${s.id})">✏️</button>`;
-    acts+=` <button class="btn-danger" onclick="openDeleteModal(${s.id})">🗑</button>`;
+    acts+=` <button class="btn-sm" onclick="openEdit('${s.id}')">✏️</button>`;
+    acts+=` <button class="btn-danger" onclick="openDeleteModal('${s.id}')">🗑</button>`;
   }
   return `<div class="survey-card"><div class="survey-row">${badges}<div class="survey-info"><p class="survey-name">${s.title}</p><p class="survey-meta">${dl}${info} ・ 作成：${creator?creator.name:'不明'}</p></div><div class="survey-actions">${acts}</div></div></div>`;
 }
@@ -637,11 +637,11 @@ function renderMyPage(){
   document.getElementById('my-answered-list').innerHTML=surveys.filter(s=>isAnswered(cu.id,s.id)).map(s=>`<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} <span class="badge badge-answered">回答済み</span><div class="survey-info"><p class="survey-name">${s.title}</p></div></div></div>`).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだ回答したアンケートはありません</p>';
   document.getElementById('my-pending-list').innerHTML=surveys.filter(s=>!isAnswered(cu.id,s.id)).map(s=>{
     const exp=isExpired(s);
-    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} ${exp?'<span class="badge badge-expired">締め切り済み</span>':'<span class="badge badge-pending">未回答</span>'}<div class="survey-info"><p class="survey-name">${s.title}</p>${exp?'<div class="banner banner-warn" style="margin-top:8px;padding:8px 12px">📧 締め切り通知メール送信済み（バックエンド実装後）</div>':''}</div><div class="survey-actions"><button class="btn-sm" onclick="openAnswer('+s.id+',\'mypage\')">回答する</button></div></div></div>`;
+    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} ${exp?'<span class="badge badge-expired">締め切り済み</span>':'<span class="badge badge-pending">未回答</span>'}<div class="survey-info"><p class="survey-name">${s.title}</p>${exp?'<div class="banner banner-warn" style="margin-top:8px;padding:8px 12px">📧 締め切り通知メール送信済み（バックエンド実装後）</div>':''}</div><div class="survey-actions"><button class="btn-sm" onclick="openAnswer('${s.id}','mypage')">回答する</button></div></div></div>`;
   }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">未回答のアンケートはありません 🎉</p>';
   document.getElementById('my-created-list').innerHTML=surveys.filter(s=>s.createdBy===cu.id).map(s=>{
     const cnt=DB.answers.filter(a=>a.surveyId===s.id).length;
-    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} <span class="badge badge-mine">作成</span><div class="survey-info"><p class="survey-name">${s.title}</p><p class="survey-meta">回答数：${cnt}件${s.deadline?' ・ 締め切り：'+s.deadline:''}</p></div><div class="survey-actions"><button class="btn-sm" onclick="openEdit(${s.id})">✏️</button><button class="btn-danger" onclick="openDeleteModal(${s.id})">🗑</button></div></div></div>`;
+    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} <span class="badge badge-mine">作成</span><div class="survey-info"><p class="survey-name">${s.title}</p><p class="survey-meta">回答数：${cnt}件${s.deadline?' ・ 締め切り：'+s.deadline:''}</p></div><div class="survey-actions"><button class="btn-sm" onclick="openEdit('${s.id}')">✏️</button><button class="btn-danger" onclick="openDeleteModal('${s.id}')">🗑</button></div></div></div>`;
   }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだアンケートを作成していません</p>';
 }
 
