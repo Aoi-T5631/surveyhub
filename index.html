@@ -205,6 +205,8 @@ tr:last-child td{border-bottom:none}
   .type-chip{padding:5px 10px;font-size:12px}
 }
 </style>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -898,6 +900,11 @@ function showResults(){
     members.map(u=>{const a=DB.answers.find(x=>x.userId===u.id&&x.surveyId===id);return `<tr><td>${u.name}</td><td>${a?'<span class="dot dot-yes"></span>回答済み':'<span class="dot dot-no"></span>未回答'}</td><td style="color:var(--text-secondary)">${a?a.answeredAt:'—'}</td></tr>`;}).join('')+
     `</tbody></table></div>`;
   }
+  const survey = DB.surveys.find(x => x.id === id);
+const sheetBtn = survey.spreadsheetUrl
+  ? `<a href="${survey.spreadsheetUrl}" target="_blank" class="btn-green" style="display:inline-block;margin-top:14px;text-decoration:none">📊 スプレッドシートを開く</a>`
+  : `<button class="btn-green" style="margin-top:14px" onclick="createSpreadsheet('${survey.id}')">📊 スプレッドシートを自動作成</button>`;
+html += sheetBtn;
   document.getElementById('results-content').innerHTML=html;
 }
 
@@ -1113,6 +1120,99 @@ function closeModal(id){document.getElementById(id).style.display='none';}
   window.deleteSurveyDB = async (surveyId) => {
     await deleteDoc(doc(db, "surveys", surveyId));
   };
+  // スプレッドシートURLをFirestoreに保存
+window.saveSpreadsheetUrl = async (surveyId, url) => {
+  const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  await updateDoc(doc(db, "surveys", surveyId), { spreadsheetUrl: url });
+};
+</script>
+<script>
+const GOOGLE_CLIENT_ID = '180779325597-dvcrqb60vk8epq63v8flhlpisr6fq5bi.apps.googleusercontent.com';
+let googleAccessToken = null;
+
+// Googleサインイン初期化
+function initGoogleAuth() {
+  google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
+    callback: (response) => {
+      googleAccessToken = response.access_token;
+    },
+  });
+}
+
+// スプレッドシートを自動作成してデータを書き込む
+async function createSpreadsheet(surveyId) {
+  // Googleログインを求める
+  if (!googleAccessToken) {
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
+      callback: async (response) => {
+        googleAccessToken = response.access_token;
+        await createSpreadsheet(surveyId);
+      },
+    });
+    tokenClient.requestAccessToken();
+    return;
+  }
+
+  const s = DB.surveys.find(x => x.id === surveyId);
+  const members = communityMembers();
+  const answers = await fetchAnswers(surveyId);
+  DB.answers = answers;
+
+  // スプレッドシートのデータを作成
+  let values = [];
+  if (s.type === 'date') {
+    values.push(['名前', 'メール', '回答日時', ...s.dates.map(d => fmtDate(d))]);
+    members.forEach(u => {
+      const a = answers.find(x => x.userId === u.id);
+      values.push([u.name, u.email, a ? a.answeredAt : '未回答', ...s.dates.map(d => a ? ({attend:'出席',late:'遅刻',absent:'欠席'}[a.responses[d]] || '—') : '')]);
+    });
+    const countRow = ['集計（出席）', '', '', ...s.dates.map(d => answers.filter(a => a.responses[d] === 'attend').length + '人')];
+    values.push(countRow);
+  } else {
+    values.push(['名前', 'メール', '回答日時', ...s.questions.map(q => q.text)]);
+    members.forEach(u => {
+      const a = answers.find(x => x.userId === u.id);
+      values.push([u.name, u.email, a ? a.answeredAt : '未回答', ...s.questions.map(q => a ? a.responses[q.id] || '' : '')]);
+    });
+  }
+
+  // スプレッドシートを新規作成
+  const createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${googleAccessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      properties: { title: s.title },
+      sheets: [{ properties: { title: '回答データ' } }],
+    }),
+  });
+  const sheet = await createRes.json();
+  const spreadsheetId = sheet.spreadsheetId;
+  const spreadsheetUrl = sheet.spreadsheetUrl;
+
+  // データを書き込む
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/回答データ!A1:Z1000?valueInputOption=RAW`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${googleAccessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ values }),
+  });
+
+  // FirestoreにスプレッドシートのURLを保存
+  await window.saveSpreadsheetUrl(surveyId, spreadsheetUrl);
+  s.spreadsheetUrl = spreadsheetUrl;
+
+  alert('スプレッドシートを作成しました！');
+  renderAdmin();
+}
 </script>
 </body>
 </html>
