@@ -510,15 +510,15 @@ function handleAuth(){
   if(!email){emailErr.textContent='メールアドレスを入力してください';emailErr.style.display='block';return;}
   if(!validateEmail(email)){emailErr.textContent='有効なメールアドレスの形式で入力してください';emailErr.style.display='block';return;}
   if(isLogin){
-    const user=DB.users.find(u=>u.email===email&&u.pass===pass);
-    if(!user){errEl.textContent='メールアドレスまたはパスワードが違います';errEl.style.display='block';return;}
-    login(user,false);
+    handleLogin(email, pass).catch(e=>{
+      errEl.textContent='メールアドレスまたはパスワードが違います';errEl.style.display='block';
+    });
   } else {
     const name=document.getElementById('reg-name').value.trim();
     if(!name){errEl.textContent='名前を入力してください';errEl.style.display='block';return;}
-    if(DB.users.find(u=>u.email===email)){errEl.textContent='このメールアドレスは既に登録されています';errEl.style.display='block';return;}
-    const newUser={id:DB.users.length+1,name,email,pass,joined:today};
-    DB.users.push(newUser);login(newUser,true);
+    handleRegister(name, email, pass).catch(e=>{
+      errEl.textContent='登録に失敗しました：'+e.message;errEl.style.display='block';
+    });
   }
 }
 
@@ -542,12 +542,7 @@ function login(user,isNew){
 }
 
 function logout(){
-  cu=null;currentCommunityId=null;
-  document.getElementById('main-nav').style.display='none';setNavLinks(false);
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-auth').classList.add('active');
-  isLogin=true;document.getElementById('reg-name-group').style.display='none';
-  document.getElementById('auth-title').textContent='ログイン';document.getElementById('auth-submit').textContent='ログイン';
+  handleLogout();
 }
 
 function showCommunityHome(isNew){
@@ -957,6 +952,137 @@ function createCommunity(){
 }
 function openModal(id){document.getElementById(id).style.display='flex';}
 function closeModal(id){document.getElementById(id).style.display='none';}
+</script>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ここに自分のfirebaseConfigを貼り付ける
+  const firebaseConfig = {
+    apiKey: "xxxxxxxx",
+    authDomain: "xxxxxxxx.firebaseapp.com",
+    projectId: "xxxxxxxx",
+    storageBucket: "xxxxxxxx.appspot.com",
+    messagingSenderId: "xxxxxxxx",
+    appId: "xxxxxxxx"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // ログイン状態の監視
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const docSnap = await getDoc(doc(db, "users", user.uid));
+      if (docSnap.exists()) {
+        cu = docSnap.data();
+        cu.id = user.uid;
+        document.getElementById('main-nav').style.display='flex';
+        document.getElementById('nav-name').textContent=cu.name;
+        document.getElementById('nav-avatar').textContent=cu.name[0];
+        showCommunityHome(false);
+      }
+    }
+  });
+
+  // 新規登録
+  window.handleRegister = async (name, email, pass) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await setDoc(doc(db, "users", cred.user.uid), {
+      name, email, joined: today, role: 'user'
+    });
+    cu = { id: cred.user.uid, name, email, joined: today };
+    document.getElementById('main-nav').style.display='flex';
+    document.getElementById('nav-name').textContent=cu.name;
+    document.getElementById('nav-avatar').textContent=cu.name[0];
+    showCommunityHome(true);
+  };
+
+  // ログイン
+  window.handleLogin = async (email, pass) => {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    const docSnap = await getDoc(doc(db, "users", cred.user.uid));
+    cu = docSnap.data();
+    cu.id = cred.user.uid;
+    document.getElementById('main-nav').style.display='flex';
+    document.getElementById('nav-name').textContent=cu.name;
+    document.getElementById('nav-avatar').textContent=cu.name[0];
+    showCommunityHome(false);
+  };
+
+  // ログアウト
+  window.handleLogout = async () => {
+    await signOut(auth);
+    cu = null;
+    currentCommunityId = null;
+    document.getElementById('main-nav').style.display='none';
+    setNavLinks(false);
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-auth').classList.add('active');
+  };
+
+  // コミュニティ作成
+  window.saveCommunity = async (data) => {
+    const ref = await addDoc(collection(db, "communities"), data);
+    return ref.id;
+  };
+
+  // コミュニティ取得
+  window.fetchCommunities = async (uid) => {
+    const q = query(collection(db, "communities"), where("members", "array-contains", uid));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  };
+
+  // コミュニティ検索
+  window.searchCommunitiesByName = async (name) => {
+    const snap = await getDocs(collection(db, "communities"));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.name.includes(name));
+  };
+
+  // コミュニティ参加
+  window.joinCommunityDB = async (communityId, uid) => {
+    const ref = doc(db, "communities", communityId);
+    const snap = await getDoc(ref);
+    const data = snap.data();
+    if (!data.members.includes(uid)) {
+      data.members.push(uid);
+      await setDoc(ref, data);
+    }
+  };
+
+  // アンケート作成
+  window.saveSurvey = async (data) => {
+    const ref = await addDoc(collection(db, "surveys"), data);
+    return ref.id;
+  };
+
+  // アンケート取得
+  window.fetchSurveys = async (communityId) => {
+    const q = query(collection(db, "surveys"), where("communityId", "==", communityId));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  };
+
+  // 回答保存
+  window.saveAnswer = async (data) => {
+    await addDoc(collection(db, "answers"), data);
+  };
+
+  // 回答取得
+  window.fetchAnswers = async (surveyId) => {
+    const q = query(collection(db, "answers"), where("surveyId", "==", surveyId));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  };
+
+  // アンケート削除
+  window.deleteSurveyDB = async (surveyId) => {
+    await deleteDoc(doc(db, "surveys", surveyId));
+  };
 </script>
 </body>
 </html>
