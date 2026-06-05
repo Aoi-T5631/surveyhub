@@ -407,15 +407,14 @@ tr:last-child td{border-bottom:none}
   import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   // ★ 自分のfirebaseConfigに書き換えてください
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
-
+const firebaseConfig = {
+  apiKey: "AIzaSyBFN_2SAipFWBX-zFNKjnZfKdQFGrj4RBQ",
+  authDomain: "surveyhub-fe3d8.firebaseapp.com",
+  projectId: "surveyhub-fe3d8",
+  storageBucket: "surveyhub-fe3d8.firebasestorage.app",
+  messagingSenderId: "725766481512",
+  appId: "1:725766481512:web:4cf9bba1fa34b1b901bddd"
+};
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -529,8 +528,10 @@ const today = new Date().toISOString().slice(0,10);
 const DAYS = ['日','月','火','水','木','金','土'];
 
 // ★ Google Cloud OAuthクライアントIDに書き換えてください
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_CLIENT_ID = '180779325597-dvcrqb60vk8epq63v8flhlpisr6fq5bi.apps.googleusercontent.com';
 let googleAccessToken = null;
+// ★ GASのURLに書き換えてください
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzoarxgfbHMqPeeOCF68eKhBAtJAj1lat4jBQivaqqDi4tar7Xn5BYA2fUkUqoiqA-_/exec';
 
 let cu=null, currentCommunityId=null, editingSurveyId=null, deletingSurveyId=null;
 let editingQuestions=[], editingDates=new Set(), currentSurveyType='normal';
@@ -873,16 +874,39 @@ function toggleAns(date, choice){
 function goBackFromAnswer(){ showPage(answerReturnPage); }
 
 async function submitAnswer(){
-  const s=DB.surveys.find(x=>x.id===currentAnswerSurveyId);
-  let responses={};
-  if(s.type==='date') responses={...attState};
-  else (s.questions||[]).forEach(q=>{
-    if(q.type==='radio'){ const r=document.querySelector(`input[name="q${q.id}"]:checked`); responses[q.id]=r?r.value:''; }
-    else{ const el=document.getElementById('tq'+q.id); responses[q.id]=el?el.value:''; }
+  const s = DB.surveys.find(x => x.id === currentAnswerSurveyId);
+  let responses = {};
+  if(s.type === 'date') responses = {...attState};
+  else (s.questions||[]).forEach(q => {
+    if(q.type === 'radio'){ const r = document.querySelector(`input[name="q${q.id}"]:checked`); responses[q.id] = r ? r.value : ''; }
+    else { const el = document.getElementById('tq'+q.id); responses[q.id] = el ? el.value : ''; }
   });
-  const data={userId:cu.id, surveyId:currentAnswerSurveyId, answeredAt:today, responses};
+
+  const data = { userId: cu.id, surveyId: currentAnswerSurveyId, answeredAt: today, responses };
   await window.saveAnswer(data);
   DB.answers.push(data);
+
+  // GASにデータを送信してスプレッドシートに自動追記
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'addAnswer',
+        surveyTitle: s.title,
+        surveyType: s.type,
+        userName: cu.name,
+        userEmail: cu.email,
+        answeredAt: today,
+        responses: responses,
+        dates: s.dates || [],
+        questions: s.questions || []
+      })
+    });
+  } catch(e) {
+    console.log('スプレッドシート同期エラー:', e);
+  }
+
   showPage(answerReturnPage);
 }
 
