@@ -4,13 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SurveyHub</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;color:#1a1a1a;background:#f5f5f3}
 :root{
-  --bg-primary:#ffffff;--bg-secondary:#f5f5f3;--bg-tertiary:#efefed;
+  --bg-primary:#ffffff;--bg-secondary:#f5f5f3;
   --bg-info:#e6f1fb;--bg-warn:#faeeda;--bg-danger:#fcebeb;--bg-success:#eaf3de;
   --text-primary:#1a1a1a;--text-secondary:#6b6b6b;--text-info:#185fa5;
   --text-warn:#854f0b;--text-danger:#a32d2d;--text-success:#3b6d11;
@@ -18,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
   --green:#1D9E75;--green-light:#E1F5EE;--green-border:#9FE1CB;
   --radius-md:8px;--radius-lg:12px;
 }
-.app{min-height:100vh;display:flex;flex-direction:column;position:relative}
+.app{min-height:100vh;display:flex;flex-direction:column}
 .nav{background:var(--bg-primary);border-bottom:0.5px solid var(--border-light);padding:0 16px;display:flex;align-items:center;gap:4px;height:52px;position:sticky;top:0;z-index:50}
 .nav-brand{font-weight:600;font-size:16px;color:var(--text-primary);cursor:pointer;padding:6px 10px;border-radius:var(--radius-md);margin-right:4px;border:none;background:none;flex-shrink:0}
 .nav-brand:hover{background:var(--bg-secondary)}
@@ -46,7 +49,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .form-input:focus{border-color:var(--green)}
 .form-hint{font-size:12px;color:var(--text-secondary);margin-top:4px}
 .form-error{font-size:12px;color:var(--text-danger);margin-top:4px;display:none}
-.btn-primary{background:var(--text-primary);color:#fff;border:none;width:100%;padding:10px;border-radius:var(--radius-md);cursor:pointer;font-size:14px;font-weight:600;transition:opacity .15s}
+.btn-primary{background:var(--text-primary);color:#fff;border:none;width:100%;padding:10px;border-radius:var(--radius-md);cursor:pointer;font-size:14px;font-weight:600}
 .btn-primary:hover{opacity:.85}
 .btn-sm{padding:5px 12px;font-size:13px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-primary)}
 .btn-sm:hover{background:var(--bg-secondary)}
@@ -88,7 +91,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .badge-expired{background:var(--bg-danger);color:var(--text-danger)}
 .badge-date{background:#eeedfe;color:#3c3489}
 .community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:20px}
-.community-card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:border-color .15s}
+.community-card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;cursor:pointer}
 .community-card:hover{border-color:var(--border-mid)}
 .community-icon{width:38px;height:38px;border-radius:10px;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
 .community-name{font-size:14px;font-weight:500;margin-bottom:2px}
@@ -97,7 +100,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .role-admin{background:var(--bg-info);color:var(--text-info)}
 .role-member{background:var(--bg-secondary);color:var(--text-secondary)}
 .search-wrap{position:relative;margin-bottom:8px}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:16px}
 .search-results{background:var(--bg-primary);border:0.5px solid var(--border-mid);border-radius:var(--radius-md);overflow:hidden;margin-top:4px}
 .search-result-item{padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:0.5px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
 .search-result-item:last-child{border-bottom:none}
@@ -117,8 +119,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .cal-day.other-month{color:var(--text-secondary);opacity:.4;pointer-events:none}
 .cal-day.selected{background:var(--green);color:#fff;font-weight:600}
 .cal-day.today-mark{font-weight:700;text-decoration:underline}
-.cal-day.sun{color:#e24b4a}
-.cal-day.sat{color:#185fa5}
+.cal-day.sun{color:#e24b4a}.cal-day.sat{color:#185fa5}
 .cal-day.selected.sun,.cal-day.selected.sat{color:#fff}
 .selected-dates{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:28px}
 .date-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg-secondary);border-radius:20px;padding:3px 10px;font-size:12px}
@@ -130,8 +131,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .att-answer-table td{padding:8px 10px;text-align:center;border-bottom:0.5px solid var(--border-light)}
 .att-answer-table td:first-child{text-align:left;font-weight:500;white-space:nowrap}
 .att-answer-table tr:last-child td{border-bottom:none}
-.ans-btn{padding:5px 12px;border-radius:6px;border:0.5px solid var(--border-mid);background:var(--bg-primary);cursor:pointer;font-size:12px;font-weight:500;color:var(--text-secondary);transition:all .12s}
-.ans-btn:hover{background:var(--bg-secondary)}
+.ans-btn{padding:5px 12px;border-radius:6px;border:0.5px solid var(--border-mid);background:var(--bg-primary);cursor:pointer;font-size:12px;font-weight:500;color:var(--text-secondary)}
 .ans-btn.sel-attend{background:var(--bg-success);border-color:#9fe1cb;color:#085041}
 .ans-btn.sel-late{background:var(--bg-warn);border-color:#fac775;color:var(--text-warn)}
 .ans-btn.sel-absent{background:var(--bg-danger);border-color:#f09595;color:var(--text-danger)}
@@ -170,11 +170,12 @@ tr:last-child td{border-bottom:none}
   .community-grid{grid-template-columns:1fr 1fr}
   .type-toggle{gap:4px}
   .type-chip{padding:5px 10px;font-size:12px}
+  .survey-row{flex-direction:column;align-items:flex-start}
+  .survey-actions{width:100%;justify-content:flex-end}
+  .att-answer-table th,.att-answer-table td{padding:6px 6px;font-size:12px}
+  .ans-btn{padding:4px 8px;font-size:11px}
 }
 </style>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -356,8 +357,7 @@ tr:last-child td{border-bottom:none}
     <div class="modal">
       <p class="modal-title">🔍 コミュニティを検索して参加</p>
       <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="form-input" id="community-search-input" placeholder="コミュニティ名で検索" oninput="searchCommunities(this.value)" style="padding-left:34px">
+        <input class="form-input" id="community-search-input" placeholder="コミュニティ名で検索" oninput="searchCommunities(this.value)">
       </div>
       <div id="community-search-results"></div>
       <div id="join-pw-section" style="display:none;margin-top:12px">
@@ -403,11 +403,10 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- Firebase SDK -->
 <script>
- </script>
-<script>
-  // ★ 自分のfirebaseConfigに書き換えてください
+// ============================================================
+// 設定（★ここを自分の値に書き換えてください）
+// ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBFN_2SAipFWBX-zFNKjnZfKdQFGrj4RBQ",
   authDomain: "surveyhub-fe3d8.firebaseapp.com",
@@ -416,189 +415,154 @@ const firebaseConfig = {
   messagingSenderId: "725766481512",
   appId: "1:725766481512:web:4cf9bba1fa34b1b901bddd"
 };
+const GAS_URL = 'YOUR_GAS_URL'; // GASのウェブアプリURL
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // Google OAuthクライアントID
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+// ============================================================
+// Firebase初期化
+// ============================================================
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ============================================================
+// グローバル変数
+// ============================================================
+const today = new Date().toISOString().slice(0,10);
+const DAYS = ['日','月','火','水','木','金','土'];
 var cu = null;
 var currentCommunityId = null;
-auth.onAuthStateChanged(async (user) => {
+var editingSurveyId = null;
+var deletingSurveyId = null;
+var editingQuestions = [];
+var editingDates = new Set();
+var currentSurveyType = 'normal';
+var answerReturnPage = 'surveys';
+var joinTargetId = null;
+var selectedIcon = '🏢';
+var isLoginMode = true;
+var currentAnswerSurveyId = null;
+var calYear = new Date().getFullYear();
+var calMonth = new Date().getMonth();
+var googleAccessToken = null;
+var DB = { communities: [], surveys: [], answers: [], userCache: {} };
+const attState = {};
+const ANS_LABEL = {attend:'出席', late:'遅刻', absent:'欠席'};
+const ANS_CHIP = {attend:'chip-attend', late:'chip-late', absent:'chip-absent'};
+
+// ============================================================
+// Firebase Auth監視
+// ============================================================
+auth.onAuthStateChanged(async function(user) {
   if (user) {
-    const docSnap = await db.collection('users').doc(user.uid).get();
-    if (docSnap.exists) {
-      cu = docSnap.data();
-      cu.id = user.uid;
-      document.getElementById('main-nav').style.display='flex';
-      document.getElementById('nav-name').textContent=cu.name;
-      document.getElementById('nav-avatar').textContent=cu.name[0];
-      // 通常のscriptが読み込まれるまで少し待つ
-      setTimeout(() => showCommunityHome(false), 100);
-    }
+    try {
+      var docSnap = await db.collection('users').doc(user.uid).get();
+      if (docSnap.exists) {
+        cu = docSnap.data();
+        cu.id = user.uid;
+        DB.userCache[user.uid] = cu;
+        document.getElementById('main-nav').style.display = 'flex';
+        document.getElementById('nav-name').textContent = cu.name;
+        document.getElementById('nav-avatar').textContent = cu.name[0];
+        showCommunityHome(false);
+      }
+    } catch(e) { console.error(e); }
   }
 });
 
-  window.handleRegister = async (name, email, pass) => {
-    const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await db.collection('users').doc(cred.user.uid).set({ name, email, joined: today, role: 'user' });
-    cu = { id: cred.user.uid, name, email, joined: today };
-    document.getElementById('main-nav').style.display='flex';
-    document.getElementById('nav-name').textContent=cu.name;
-    document.getElementById('nav-avatar').textContent=cu.name[0];
-    showCommunityHome(true);
-    setTimeout(() => showCommunityHome(true), 100);
-  };
-
-  window.handleLogin = async (email, pass) => {
-    const cred = await auth.signInWithEmailAndPassword(email, pass);
-    const docSnap = await db.collection('users').doc(cred.user.uid).get();
-    cu = docSnap.data();
-    cu.id = cred.user.uid;
-    document.getElementById('main-nav').style.display='flex';
-    document.getElementById('nav-name').textContent=cu.name;
-    document.getElementById('nav-avatar').textContent=cu.name[0];
-    showCommunityHome(false);
-    setTimeout(() => showCommunityHome(false), 100);
-  };
-
-  window.handleLogout = async () => {
-    await auth.signOut();
-    cu = null; currentCommunityId = null;
-    document.getElementById('main-nav').style.display='none';
-    setNavLinks(false);
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.getElementById('page-auth').classList.add('active');
-  };
-
-  window.saveCommunity = async (data) => {
-    const ref = await db.collection('communities').add(data);
-    return ref.id;
-  };
-
-  window.fetchCommunities = async (uid) => {
-    const snap = await db.collection('communities').where('members','array-contains',uid).get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  };
-
-  window.searchCommunitiesByName = async (name) => {
-    const snap = await db.collection('communities').get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.name.includes(name));
-  };
-
-  window.joinCommunityDB = async (communityId, uid) => {
-    const ref = db.collection('communities').doc(communityId);
-    const snap = await ref.get();
-    const data = snap.data();
-    if (!data.members.includes(uid)) {
-      data.members.push(uid);
-      await ref.set(data);
-    }
-  };
-
-  window.saveSurvey = async (data) => {
-    const ref = await db.collection('surveys').add(data);
-    return ref.id;
-  };
-
-  window.updateSurvey = async (surveyId, data) => {
-    await db.collection('surveys').doc(surveyId).update(data);
-  };
-
-  window.fetchSurveys = async (communityId) => {
-    const snap = await db.collection('surveys').where('communityId','==',communityId).get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  };
-
-  window.saveAnswer = async (data) => {
-    await db.collection('answers').add(data);
-  };
-
-  window.fetchAnswers = async (surveyId) => {
-    const snap = await db.collection('answers').where('surveyId','==',surveyId).get();
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  };
-
-  window.deleteSurveyDB = async (surveyId) => {
-    await db.collection('surveys').doc(surveyId).delete();
-  };
-
-  window.saveSpreadsheetUrl = async (surveyId, url) => {
-    await db.collection('surveys').doc(surveyId).update({ spreadsheetUrl: url });
-  };
-</script>
-
-<script>
-const today = new Date().toISOString().slice(0,10);
-const DAYS = ['日','月','火','水','木','金','土'];
-
-// ★ Google Cloud OAuthクライアントIDに書き換えてください
-const GOOGLE_CLIENT_ID = '180779325597-dvcrqb60vk8epq63v8flhlpisr6fq5bi.apps.googleusercontent.com';
-let googleAccessToken = null;
-// ★ GASのURLに書き換えてください
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzoarxgfbHMqPeeOCF68eKhBAtJAj1lat4jBQivaqqDi4tar7Xn5BYA2fUkUqoiqA-_/exec';
-
-let editingQuestions=[], editingDates=new Set(), currentSurveyType='normal';
-let answerReturnPage='surveys', joinTargetId=null, selectedIcon='🏢';
-let isLogin=true, currentAnswerSurveyId=null;
-let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
-const attState={};
-const DB={ users:[], communities:[], surveys:[], answers:[] };
-
-const isExpired = s => s.deadline && s.deadline < today;
-const isAnswered = (uid,sid) => DB.answers.some(a => a.userId===uid && a.surveyId===sid);
-const hasAnswers = sid => DB.answers.some(a => a.surveyId===sid);
-const communitySurveys = () => DB.surveys.filter(s => s.communityId===currentCommunityId);
-const communityMembers = () => { const c=DB.communities.find(x=>x.id===currentCommunityId); return c ? DB.users.filter(u=>c.members.includes(u.id)) : []; };
-const isAdmin = () => { const c=DB.communities.find(x=>x.id===currentCommunityId); return c && c.createdBy===cu.id; };
-const validateEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-const fmtDate = d => { if(!d) return ''; const p=d.split('-'); return `${p[1]}/${p[2]}(${DAYS[new Date(d).getDay()]})`; };
-const pad = n => String(n).padStart(2,'0');
-const toYMD = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
+// ============================================================
+// ユーティリティ
+// ============================================================
+var isExpired = function(s){ return s.deadline && s.deadline < today; };
+var isAnswered = function(uid,sid){ return DB.answers.some(function(a){ return a.userId===uid && a.surveyId===sid; }); };
+var hasAnswers = function(sid){ return DB.answers.some(function(a){ return a.surveyId===sid; }); };
+var communitySurveys = function(){ return DB.surveys.filter(function(s){ return s.communityId===currentCommunityId; }); };
+var validateEmail = function(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); };
+var fmtDate = function(d){ if(!d) return ''; var p=d.split('-'); return p[1]+'/'+p[2]+'('+DAYS[new Date(d).getDay()]+')'; };
+var pad = function(n){ return String(n).padStart(2,'0'); };
+var toYMD = function(y,m,d){ return y+'-'+pad(m+1)+'-'+pad(d); };
+var typeBadge = function(t){ return t==='date'?'<span class="badge badge-date">📅 日程回答</span>':''; };
 
 function setNavLinks(show){
-  document.getElementById('nav-links').style.display=show?'flex':'none';
-  document.getElementById('nav-sep').style.display=show?'inline':'none';
-  document.getElementById('nav-community-name').style.display=show?'inline':'none';
+  document.getElementById('nav-links').style.display = show ? 'flex' : 'none';
+  document.getElementById('nav-sep').style.display = show ? 'inline' : 'none';
+  document.getElementById('nav-community-name').style.display = show ? 'inline' : 'none';
 }
 
+// ============================================================
+// 認証
+// ============================================================
 function handleAuth(){
-  const email=document.getElementById('auth-email').value.trim();
-  const pass=document.getElementById('auth-pass').value.trim();
-  const errEl=document.getElementById('auth-error'), emailErr=document.getElementById('email-error');
+  var email = document.getElementById('auth-email').value.trim();
+  var pass = document.getElementById('auth-pass').value.trim();
+  var errEl = document.getElementById('auth-error');
+  var emailErr = document.getElementById('email-error');
   errEl.style.display='none'; emailErr.style.display='none'; errEl.textContent=''; emailErr.textContent='';
   if(!email){ emailErr.textContent='メールアドレスを入力してください'; emailErr.style.display='block'; return; }
   if(!validateEmail(email)){ emailErr.textContent='有効なメールアドレスの形式で入力してください'; emailErr.style.display='block'; return; }
-  if(isLogin){
-    window.handleLogin(email, pass).catch(e => {
-      errEl.textContent='メールアドレスまたはパスワードが違います'; errEl.style.display='block';
-    });
+  if(isLoginMode){
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(async function(cred){
+        var docSnap = await db.collection('users').doc(cred.user.uid).get();
+        cu = docSnap.data(); cu.id = cred.user.uid;
+        DB.userCache[cu.id] = cu;
+        document.getElementById('main-nav').style.display='flex';
+        document.getElementById('nav-name').textContent=cu.name;
+        document.getElementById('nav-avatar').textContent=cu.name[0];
+        showCommunityHome(false);
+      })
+      .catch(function(){ errEl.textContent='メールアドレスまたはパスワードが違います'; errEl.style.display='block'; });
   } else {
-    const name=document.getElementById('reg-name').value.trim();
+    var name = document.getElementById('reg-name').value.trim();
     if(!name){ errEl.textContent='名前を入力してください'; errEl.style.display='block'; return; }
-    window.handleRegister(name, email, pass).catch(e => {
-      errEl.textContent='登録に失敗しました：'+e.message; errEl.style.display='block';
-    });
+    auth.createUserWithEmailAndPassword(email, pass)
+      .then(async function(cred){
+        await db.collection('users').doc(cred.user.uid).set({ name:name, email:email, joined:today, role:'user' });
+        cu = { id:cred.user.uid, name:name, email:email, joined:today };
+        DB.userCache[cu.id] = cu;
+        document.getElementById('main-nav').style.display='flex';
+        document.getElementById('nav-name').textContent=cu.name;
+        document.getElementById('nav-avatar').textContent=cu.name[0];
+        showCommunityHome(true);
+      })
+      .catch(function(e){ errEl.textContent='登録に失敗しました：'+e.message; errEl.style.display='block'; });
   }
 }
 
 function toggleAuth(){
-  isLogin=!isLogin;
-  document.getElementById('auth-title').textContent=isLogin?'ログイン':'新規登録';
-  document.getElementById('auth-sub').textContent=isLogin?'メールアドレスとパスワードでログイン':'名前とメールアドレスで登録';
-  document.getElementById('auth-submit').textContent=isLogin?'ログイン':'登録する';
-  document.getElementById('auth-toggle-text').textContent=isLogin?'アカウントをお持ちでない方は':'すでにアカウントをお持ちの方は';
-  document.getElementById('reg-name-group').style.display=isLogin?'none':'block';
+  isLoginMode = !isLoginMode;
+  document.getElementById('auth-title').textContent = isLoginMode?'ログイン':'新規登録';
+  document.getElementById('auth-sub').textContent = isLoginMode?'メールアドレスとパスワードでログイン':'名前とメールアドレスで登録';
+  document.getElementById('auth-submit').textContent = isLoginMode?'ログイン':'登録する';
+  document.getElementById('auth-toggle-text').textContent = isLoginMode?'アカウントをお持ちでない方は':'すでにアカウントをお持ちの方は';
+  document.getElementById('reg-name-group').style.display = isLoginMode?'none':'block';
   document.getElementById('auth-error').style.display='none';
   document.getElementById('email-error').style.display='none';
 }
 
-function logout(){ window.handleLogout(); }
+function logout(){
+  auth.signOut().then(function(){
+    cu=null; currentCommunityId=null;
+    document.getElementById('main-nav').style.display='none';
+    setNavLinks(false);
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('page-auth').classList.add('active');
+    isLoginMode=true;
+    document.getElementById('reg-name-group').style.display='none';
+    document.getElementById('auth-title').textContent='ログイン';
+    document.getElementById('auth-submit').textContent='ログイン';
+  });
+}
 
+// ============================================================
+// コミュニティホーム
+// ============================================================
 async function showCommunityHome(isNew){
   currentCommunityId=null; setNavLinks(false); document.getElementById('nb-admin').style.display='none';
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-community-home').classList.add('active');
-  document.getElementById('ch-username').textContent=`${cu.name}さん、こんにちは`;
-  const banner=document.getElementById('verify-banner');
+  document.getElementById('ch-username').textContent = cu.name+'さん、こんにちは';
+  var banner = document.getElementById('verify-banner');
   if(isNew){ document.getElementById('verify-email-addr').textContent=cu.email; banner.style.display='flex'; }
   else banner.style.display='none';
   await renderMyCommunities();
@@ -607,161 +571,176 @@ async function showCommunityHome(isNew){
 function goHome(){ showCommunityHome(false); }
 
 async function renderMyCommunities(){
-  const grid=document.getElementById('my-community-grid');
+  var grid = document.getElementById('my-community-grid');
   grid.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">読み込み中...</p>';
-  const mine = await window.fetchCommunities(cu.id);
+  var snap = await db.collection('communities').where('members','array-contains',cu.id).get();
+  var mine = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
   DB.communities = mine;
   if(!mine.length){ grid.innerHTML='<p style="font-size:14px;color:var(--text-secondary);grid-column:1/-1">まだコミュニティに参加していません</p>'; return; }
-  grid.innerHTML=mine.map(c=>{
-    const role=c.createdBy===cu.id?'<span class="community-role role-admin">管理者</span>':'<span class="community-role role-member">メンバー</span>';
-    return `<div class="community-card" onclick="enterCommunity('${c.id}')"><div class="community-icon">${c.icon}</div><p class="community-name">${c.name}</p><p class="community-meta">${DB.surveys.filter(s=>s.communityId===c.id).length}件のアンケート</p>${role}</div>`;
+  grid.innerHTML = mine.map(function(c){
+    var role = c.createdBy===cu.id?'<span class="community-role role-admin">管理者</span>':'<span class="community-role role-member">メンバー</span>';
+    return '<div class="community-card" onclick="enterCommunity(\''+c.id+'\')"><div class="community-icon">'+c.icon+'</div><p class="community-name">'+c.name+'</p><p class="community-meta">アンケート</p>'+role+'</div>';
   }).join('');
 }
 
 async function enterCommunity(id){
-  currentCommunityId=id;
-  const c=DB.communities.find(x=>x.id===id);
-  document.getElementById('nav-community-name').textContent=c.name;
+  currentCommunityId = id;
+  var c = DB.communities.find(function(x){ return x.id===id; });
+  document.getElementById('nav-community-name').textContent = c.name;
   setNavLinks(true);
-  document.getElementById('nb-admin').style.display=isAdmin()?'block':'none';
-  DB.surveys = await window.fetchSurveys(id);
+  document.getElementById('nb-admin').style.display = (c.createdBy===cu.id)?'block':'none';
+  var snap = await db.collection('surveys').where('communityId','==',id).get();
+  DB.surveys = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
   showPage('surveys');
 }
 
+// ============================================================
+// ページ遷移
+// ============================================================
 function showPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-'+id).classList.add('active');
-  ['surveys','create'].forEach(n=>{ const b=document.getElementById('nb-'+n); if(b) b.classList.toggle('active',n===id); });
+  ['surveys','create'].forEach(function(n){
+    var b = document.getElementById('nb-'+n);
+    if(b) b.classList.toggle('active', n===id);
+  });
   if(id==='surveys') renderSurveys();
   if(id==='mypage') renderMyPage();
   if(id==='create') openCreate(null);
   if(id==='admin') renderAdmin();
 }
 
-function typeBadge(t){ return t==='date'?'<span class="badge badge-date">📅 日程回答</span>':''; }
-
+// ============================================================
+// アンケート一覧
+// ============================================================
 function renderSurveys(){
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
-  document.getElementById('surveys-sub').textContent=c?`${c.name}のアンケート一覧`:'';
-  document.getElementById('all-survey-list').innerHTML=communitySurveys().map(s=>surveyCardHTML(s)).join('');
+  var c = DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  document.getElementById('surveys-sub').textContent = c ? c.name+'のアンケート一覧' : '';
+  document.getElementById('all-survey-list').innerHTML = communitySurveys().map(surveyCardHTML).join('');
 }
 
 function surveyCardHTML(s){
-  const answered=isAnswered(cu.id,s.id), expired=isExpired(s), owner=s.createdBy===cu.id;
-  const creator=DB.users.find(u=>u.id===s.createdBy);
-  let badges=typeBadge(s.type)+' ';
-  if(answered) badges+='<span class="badge badge-answered">回答済み</span> ';
-  if(expired)  badges+='<span class="badge badge-expired">締め切り済み</span> ';
-  else if(!answered) badges+='<span class="badge badge-pending">未回答</span> ';
-  const dl=s.deadline?`締め切り：${s.deadline} ・ `:'';
-  const info=s.type==='date'?`${(s.dates||[]).length}日程`:`${(s.questions||[]).length}問`;
-  let acts='';
-  if(!answered) acts+=`<button class="btn-sm" onclick="openAnswer('${s.id}','surveys')">回答する</button>`;
-  if(owner){
-    acts+=` <button class="btn-sm" onclick="openEdit('${s.id}')">✏️</button>`;
-    acts+=` <button class="btn-danger" onclick="openDeleteModal('${s.id}')">🗑</button>`;
-  }
-  return `<div class="survey-card"><div class="survey-row">${badges}<div class="survey-info"><p class="survey-name">${s.title}</p><p class="survey-meta">${dl}${info} ・ 作成：${creator?creator.name:'不明'}</p></div><div class="survey-actions">${acts}</div></div></div>`;
+  var answered = isAnswered(cu.id,s.id);
+  var expired = isExpired(s);
+  var owner = s.createdBy===cu.id;
+  var creator = DB.userCache[s.createdBy] ? DB.userCache[s.createdBy].name : '不明';
+  var badges = typeBadge(s.type)+' ';
+  if(answered) badges += '<span class="badge badge-answered">回答済み</span> ';
+  if(expired) badges += '<span class="badge badge-expired">締め切り済み</span> ';
+  else if(!answered) badges += '<span class="badge badge-pending">未回答</span> ';
+  var dl = s.deadline ? '締め切り：'+s.deadline+' ・ ' : '';
+  var info = s.type==='date' ? (s.dates||[]).length+'日程' : (s.questions||[]).length+'問';
+  var acts = '';
+  if(!answered) acts += '<button class="btn-sm" onclick="openAnswer(\''+s.id+'\',\'surveys\')">回答する</button>';
+  if(owner){ acts += ' <button class="btn-sm" onclick="openEdit(\''+s.id+'\')">✏️</button>'; acts += ' <button class="btn-danger" onclick="openDeleteModal(\''+s.id+'\')">🗑</button>'; }
+  return '<div class="survey-card"><div class="survey-row">'+badges+'<div class="survey-info"><p class="survey-name">'+s.title+'</p><p class="survey-meta">'+dl+info+' ・ 作成：'+creator+'</p></div><div class="survey-actions">'+acts+'</div></div></div>';
 }
 
+// ============================================================
+// マイページ
+// ============================================================
 async function renderMyPage(){
   if(!cu) return;
-  document.getElementById('my-big-avatar').textContent=cu.name[0];
-  document.getElementById('my-name-label').textContent=cu.name;
-  document.getElementById('my-email-label').textContent=cu.email;
-  const surveys=currentCommunityId?communitySurveys():DB.surveys;
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
-  document.getElementById('my-community-label').textContent=c?c.name:'';
-  if(currentCommunityId){ DB.answers = await window.fetchAnswers(currentCommunityId) || []; }
-  const answered=surveys.filter(s=>isAnswered(cu.id,s.id)).length;
-  const pct=surveys.length?Math.round(answered/surveys.length*100):0;
-  document.getElementById('my-pct').textContent=pct;
-  document.getElementById('my-bar').style.width=pct+'%';
-  document.getElementById('my-bar-left').textContent=`回答済み ${answered}件`;
-  document.getElementById('my-bar-right').textContent=`全 ${surveys.length}件`;
-  document.getElementById('my-answered-count').textContent=answered;
-  document.getElementById('my-pending-count').textContent=surveys.length-answered;
-  document.getElementById('my-answered-list').innerHTML=surveys.filter(s=>isAnswered(cu.id,s.id)).map(s=>`<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} <span class="badge badge-answered">回答済み</span><div class="survey-info"><p class="survey-name">${s.title}</p></div></div></div>`).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだ回答したアンケートはありません</p>';
-  document.getElementById('my-pending-list').innerHTML=surveys.filter(s=>!isAnswered(cu.id,s.id)).map(s=>{
-    const exp=isExpired(s);
-    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} ${exp?'<span class="badge badge-expired">締め切り済み</span>':'<span class="badge badge-pending">未回答</span>'}<div class="survey-info"><p class="survey-name">${s.title}</p></div><div class="survey-actions"><button class="btn-sm" onclick="openAnswer('${s.id}','mypage')">回答する</button></div></div></div>`;
-  }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">未回答のアンケートはありません 🎉</p>';
-  document.getElementById('my-created-list').innerHTML=surveys.filter(s=>s.createdBy===cu.id).map(s=>{
-    const cnt=DB.answers.filter(a=>a.surveyId===s.id).length;
-    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} <span class="badge badge-mine">作成</span><div class="survey-info"><p class="survey-name">${s.title}</p><p class="survey-meta">回答数：${cnt}件${s.deadline?' ・ 締め切り：'+s.deadline:''}</p></div><div class="survey-actions"><button class="btn-sm" onclick="openEdit('${s.id}')">✏️</button><button class="btn-danger" onclick="openDeleteModal('${s.id}')">🗑</button></div></div></div>`;
-  }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだアンケートを作成していません</p>';
+  document.getElementById('my-big-avatar').textContent = cu.name[0];
+  document.getElementById('my-name-label').textContent = cu.name;
+  document.getElementById('my-email-label').textContent = cu.email;
+  var surveys = communitySurveys();
+  var c = DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  document.getElementById('my-community-label').textContent = c ? c.name : '';
+  var ansSnap = await db.collection('answers').where('userId','==',cu.id).get();
+  DB.answers = ansSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+  var answered = surveys.filter(function(s){ return isAnswered(cu.id,s.id); }).length;
+  var pct = surveys.length ? Math.round(answered/surveys.length*100) : 0;
+  document.getElementById('my-pct').textContent = pct;
+  document.getElementById('my-bar').style.width = pct+'%';
+  document.getElementById('my-bar-left').textContent = '回答済み '+answered+'件';
+  document.getElementById('my-bar-right').textContent = '全 '+surveys.length+'件';
+  document.getElementById('my-answered-count').textContent = answered;
+  document.getElementById('my-pending-count').textContent = surveys.length-answered;
+  document.getElementById('my-answered-list').innerHTML = surveys.filter(function(s){ return isAnswered(cu.id,s.id); }).map(function(s){
+    return '<div class="survey-card"><div class="survey-row">'+typeBadge(s.type)+' <span class="badge badge-answered">回答済み</span><div class="survey-info"><p class="survey-name">'+s.title+'</p></div></div></div>';
+  }).join('') || '<p style="font-size:14px;color:var(--text-secondary)">まだ回答したアンケートはありません</p>';
+  document.getElementById('my-pending-list').innerHTML = surveys.filter(function(s){ return !isAnswered(cu.id,s.id); }).map(function(s){
+    var exp = isExpired(s);
+    return '<div class="survey-card"><div class="survey-row">'+typeBadge(s.type)+' '+(exp?'<span class="badge badge-expired">締め切り済み</span>':'<span class="badge badge-pending">未回答</span>')+'<div class="survey-info"><p class="survey-name">'+s.title+'</p></div><div class="survey-actions"><button class="btn-sm" onclick="openAnswer(\''+s.id+'\',\'mypage\')">回答する</button></div></div></div>';
+  }).join('') || '<p style="font-size:14px;color:var(--text-secondary)">未回答のアンケートはありません 🎉</p>';
+  document.getElementById('my-created-list').innerHTML = surveys.filter(function(s){ return s.createdBy===cu.id; }).map(function(s){
+    return '<div class="survey-card"><div class="survey-row">'+typeBadge(s.type)+' <span class="badge badge-mine">作成</span><div class="survey-info"><p class="survey-name">'+s.title+'</p></div><div class="survey-actions"><button class="btn-sm" onclick="openEdit(\''+s.id+'\')">✏️</button><button class="btn-danger" onclick="openDeleteModal(\''+s.id+'\')">🗑</button></div></div></div>';
+  }).join('') || '<p style="font-size:14px;color:var(--text-secondary)">まだアンケートを作成していません</p>';
 }
 
 function switchMyTab(tab){
-  document.querySelectorAll('#page-mypage .tab-btn').forEach((b,i)=>b.classList.toggle('active',['answered','pending','created'][i]===tab));
-  document.querySelectorAll('#page-mypage .tab-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('#page-mypage .tab-btn').forEach(function(b,i){ b.classList.toggle('active',['answered','pending','created'][i]===tab); });
+  document.querySelectorAll('#page-mypage .tab-section').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById('my-tab-'+tab).classList.add('active');
 }
 
-// Calendar
+// ============================================================
+// カレンダー
+// ============================================================
 function renderCalendar(){
-  const label=document.getElementById('cal-month-label');
+  var label = document.getElementById('cal-month-label');
   if(!label) return;
-  label.textContent=`${calYear}年${calMonth+1}月`;
-  const grid=document.getElementById('cal-grid');
-  let html=DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  const first=new Date(calYear,calMonth,1).getDay();
-  const last=new Date(calYear,calMonth+1,0).getDate();
-  const prevLast=new Date(calYear,calMonth,0).getDate();
-  for(let i=0;i<first;i++) html+=`<button class="cal-day other-month" disabled>${prevLast-first+1+i}</button>`;
-  for(let d=1;d<=last;d++){
-    const ymd=toYMD(calYear,calMonth,d);
-    const dow=new Date(calYear,calMonth,d).getDay();
-    const sel=editingDates.has(ymd);
-    let cls='cal-day';
-    if(dow===0) cls+=' sun';
-    if(dow===6) cls+=' sat';
-    if(sel) cls+=' selected';
+  label.textContent = calYear+'年'+(calMonth+1)+'月';
+  var grid = document.getElementById('cal-grid');
+  var html = DAYS.map(function(d){ return '<div class="cal-dow">'+d+'</div>'; }).join('');
+  var first = new Date(calYear,calMonth,1).getDay();
+  var last = new Date(calYear,calMonth+1,0).getDate();
+  var prevLast = new Date(calYear,calMonth,0).getDate();
+  for(var i=0;i<first;i++) html += '<button class="cal-day other-month" disabled>'+(prevLast-first+1+i)+'</button>';
+  for(var d=1;d<=last;d++){
+    var ymd = toYMD(calYear,calMonth,d);
+    var dow = new Date(calYear,calMonth,d).getDay();
+    var cls = 'cal-day';
+    if(dow===0) cls+=' sun'; if(dow===6) cls+=' sat';
+    if(editingDates.has(ymd)) cls+=' selected';
     if(ymd===today) cls+=' today-mark';
-    html+=`<button class="${cls}" onclick="toggleCalDay('${ymd}')">${d}</button>`;
+    html += '<button class="'+cls+'" onclick="toggleCalDay(\''+ymd+'\')">'+d+'</button>';
   }
-  const rem=(7-((first+last)%7))%7;
-  for(let d=1;d<=rem;d++) html+=`<button class="cal-day other-month" disabled>${d}</button>`;
-  grid.innerHTML=html;
+  var rem = (7-((first+last)%7))%7;
+  for(var d2=1;d2<=rem;d2++) html += '<button class="cal-day other-month" disabled>'+d2+'</button>';
+  grid.innerHTML = html;
   renderSelectedChips();
 }
 function calPrev(){ calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderCalendar(); }
 function calNext(){ calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderCalendar(); }
 function toggleCalDay(ymd){ editingDates.has(ymd)?editingDates.delete(ymd):editingDates.add(ymd); renderCalendar(); }
 function renderSelectedChips(){
-  const sorted=[...editingDates].sort();
-  const lbl=document.getElementById('selected-dates-label');
-  const chips=document.getElementById('selected-dates-chips');
+  var sorted = [...editingDates].sort();
+  var lbl = document.getElementById('selected-dates-label');
+  var chips = document.getElementById('selected-dates-chips');
   if(!lbl||!chips) return;
-  lbl.textContent=`選択中の日程：${sorted.length}件`;
-  chips.innerHTML=sorted.map(d=>`<div class="date-chip">${fmtDate(d)}<button onclick="removeCalDay('${d}')">×</button></div>`).join('');
+  lbl.textContent = '選択中の日程：'+sorted.length+'件';
+  chips.innerHTML = sorted.map(function(d){ return '<div class="date-chip">'+fmtDate(d)+'<button onclick="removeCalDay(\''+d+'\')">×</button></div>'; }).join('');
 }
 function removeCalDay(ymd){ editingDates.delete(ymd); renderCalendar(); }
 
-// Create
+// ============================================================
+// アンケート作成
+// ============================================================
 function setSurveyType(t){
-  currentSurveyType=t;
-  ['normal','date'].forEach(x=>document.getElementById('chip-'+x).classList.toggle('active',x===t));
-  document.getElementById('date-picker-section').style.display=t==='date'?'block':'none';
-  document.getElementById('normal-questions-section').style.display=t==='normal'?'block':'none';
+  currentSurveyType = t;
+  ['normal','date'].forEach(function(x){ document.getElementById('chip-'+x).classList.toggle('active',x===t); });
+  document.getElementById('date-picker-section').style.display = t==='date'?'block':'none';
+  document.getElementById('normal-questions-section').style.display = t==='normal'?'block':'none';
 }
 
 function openCreate(sid){
   editingSurveyId=sid; editingDates=new Set(); editingQuestions=[];
-  const locked=sid?hasAnswers(sid):false;
-  document.getElementById('create-page-title').textContent=sid?'アンケートを編集':'アンケートを作成';
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
-  document.getElementById('create-page-sub').textContent=c?`コミュニティ：${c.name}`:'';
-  document.getElementById('create-submit-btn').textContent=sid?'変更を保存':'作成して公開';
-  document.getElementById('edit-locked-notice').style.display=locked?'flex':'none';
-  document.getElementById('add-q-btn').style.display=locked?'none':'inline-block';
+  var locked = sid ? hasAnswers(sid) : false;
+  document.getElementById('create-page-title').textContent = sid?'アンケートを編集':'アンケートを作成';
+  var c = DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  document.getElementById('create-page-sub').textContent = c?'コミュニティ：'+c.name:'';
+  document.getElementById('create-submit-btn').textContent = sid?'変更を保存':'作成して公開';
+  document.getElementById('edit-locked-notice').style.display = locked?'flex':'none';
+  document.getElementById('add-q-btn').style.display = locked?'none':'inline-block';
   if(sid){
-    const s=DB.surveys.find(x=>x.id===sid);
-    document.getElementById('new-survey-title').value=s.title;
-    document.getElementById('new-survey-desc').value=s.desc;
-    document.getElementById('new-survey-deadline').value=s.deadline||'';
-    currentSurveyType=s.type;
-    if(!locked){ editingDates=new Set(s.dates||[]); editingQuestions=(s.questions||[]).map(q=>({...q,options:[...(q.options||[])]})); }
+    var s = DB.surveys.find(function(x){ return x.id===sid; });
+    document.getElementById('new-survey-title').value = s.title;
+    document.getElementById('new-survey-desc').value = s.desc;
+    document.getElementById('new-survey-deadline').value = s.deadline||'';
+    currentSurveyType = s.type;
+    if(!locked){ editingDates=new Set(s.dates||[]); editingQuestions=(s.questions||[]).map(function(q){ return Object.assign({},q,{options:[...(q.options||[])]}); }); }
   } else {
     document.getElementById('new-survey-title').value='';
     document.getElementById('new-survey-desc').value='';
@@ -774,9 +753,9 @@ function openCreate(sid){
 }
 
 function openEdit(sid){
-  const s=DB.surveys.find(x=>x.id===sid);
+  var s = DB.surveys.find(function(x){ return x.id===sid; });
   if(s.createdBy!==cu.id){ alert('編集権限がありません'); return; }
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-create').classList.add('active');
   openCreate(sid);
 }
@@ -784,136 +763,141 @@ function openEdit(sid){
 function addQuestion(){ editingQuestions.push({id:Date.now(),text:'',type:'radio',options:['選択肢1','選択肢2']}); renderQBuilder(false,editingSurveyId); }
 
 function renderQBuilder(locked,sid){
-  const el=document.getElementById('questions-list'), empty=document.getElementById('create-empty');
+  var el = document.getElementById('questions-list');
+  var empty = document.getElementById('create-empty');
   if(locked&&sid){
-    const s=DB.surveys.find(x=>x.id===sid); empty.style.display='none';
-    el.innerHTML=(s.type==='normal'?(s.questions||[]).map((q,i)=>`<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;margin-bottom:8px;opacity:.7"><p style="font-size:12px;color:var(--text-secondary)">質問 ${i+1}（編集不可）</p><p style="font-size:14px;font-weight:500">${q.text}</p></div>`):(s.dates||[]).map(d=>`<div class="date-chip" style="opacity:.7">${fmtDate(d)}（編集不可）</div>`)).join('');
+    var s = DB.surveys.find(function(x){ return x.id===sid; }); empty.style.display='none';
+    el.innerHTML = (s.type==='normal'?(s.questions||[]).map(function(q,i){ return '<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;margin-bottom:8px;opacity:.7"><p style="font-size:12px;color:var(--text-secondary)">質問 '+(i+1)+'（編集不可）</p><p style="font-size:14px;font-weight:500">'+q.text+'</p></div>'; }):(s.dates||[]).map(function(d){ return '<div class="date-chip" style="opacity:.7">'+fmtDate(d)+'（編集不可）</div>'; })).join('');
     return;
   }
-  empty.style.display=editingQuestions.length?'none':'block';
-  el.innerHTML=editingQuestions.map((q,i)=>`
-    <div class="q-builder-item">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-        <span style="font-size:12px;color:var(--text-secondary);flex-shrink:0">質問 ${i+1}</span>
-        <input class="form-input" value="${q.text}" placeholder="質問文を入力" oninput="editingQuestions[${i}].text=this.value" style="flex:1">
-        <button class="btn-danger" onclick="editingQuestions.splice(${i},1);renderQBuilder(false,editingSurveyId)">🗑</button>
-      </div>
-      <select class="form-input" onchange="editingQuestions[${i}].type=this.value;renderQBuilder(false,editingSurveyId)" style="max-width:160px;margin-bottom:10px">
-        <option value="radio" ${q.type==='radio'?'selected':''}>選択肢（単一）</option>
-        <option value="text" ${q.type==='text'?'selected':''}>自由記述</option>
-      </select>
-      ${q.type==='radio'?`<div style="display:flex;flex-direction:column;gap:6px">
-        ${q.options.map((o,j)=>`<div style="display:flex;gap:6px;align-items:center"><input class="form-input" value="${o}" oninput="editingQuestions[${i}].options[${j}]=this.value" style="flex:1">${q.options.length>2?`<button class="btn-sm" onclick="editingQuestions[${i}].options.splice(${j},1);renderQBuilder(false,editingSurveyId)">×</button>`:''}</div>`).join('')}
-        <button class="btn-sm" onclick="editingQuestions[${i}].options.push('新しい選択肢');renderQBuilder(false,editingSurveyId)" style="align-self:flex-start;margin-top:4px">＋ 選択肢を追加</button>
-      </div>`:'<p style="font-size:13px;color:var(--text-secondary)">自由記述のテキストボックスが表示されます</p>'}
-    </div>`).join('');
+  empty.style.display = editingQuestions.length?'none':'block';
+  el.innerHTML = editingQuestions.map(function(q,i){
+    return '<div class="q-builder-item"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><span style="font-size:12px;color:var(--text-secondary);flex-shrink:0">質問 '+(i+1)+'</span><input class="form-input" value="'+q.text+'" placeholder="質問文を入力" oninput="editingQuestions['+i+'].text=this.value" style="flex:1"><button class="btn-danger" onclick="editingQuestions.splice('+i+',1);renderQBuilder(false,editingSurveyId)">🗑</button></div>'
+      +'<select class="form-input" onchange="editingQuestions['+i+'].type=this.value;renderQBuilder(false,editingSurveyId)" style="max-width:160px;margin-bottom:10px"><option value="radio" '+(q.type==='radio'?'selected':'')+'>選択肢（単一）</option><option value="text" '+(q.type==='text'?'selected':'')+'>自由記述</option></select>'
+      +(q.type==='radio'?'<div style="display:flex;flex-direction:column;gap:6px">'+q.options.map(function(o,j){ return '<div style="display:flex;gap:6px;align-items:center"><input class="form-input" value="'+o+'" oninput="editingQuestions['+i+'].options['+j+']=this.value" style="flex:1">'+(q.options.length>2?'<button class="btn-sm" onclick="editingQuestions['+i+'].options.splice('+j+',1);renderQBuilder(false,editingSurveyId)">×</button>':'')+'</div>'; }).join('')+'<button class="btn-sm" onclick="editingQuestions['+i+'].options.push(\'新しい選択肢\');renderQBuilder(false,editingSurveyId)" style="align-self:flex-start;margin-top:4px">＋ 選択肢を追加</button></div>':'<p style="font-size:13px;color:var(--text-secondary)">自由記述のテキストボックスが表示されます</p>')
+      +'</div>';
+  }).join('');
 }
 
 async function createSurvey(){
-  const title=document.getElementById('new-survey-title').value.trim();
-  const desc=document.getElementById('new-survey-desc').value.trim();
-  const deadline=document.getElementById('new-survey-deadline').value;
+  var title = document.getElementById('new-survey-title').value.trim();
+  var desc = document.getElementById('new-survey-desc').value.trim();
+  var deadline = document.getElementById('new-survey-deadline').value;
   if(!title){ alert('タイトルを入力してください'); return; }
-  const t=currentSurveyType;
+  var t = currentSurveyType;
   if(editingSurveyId){
-    const s=DB.surveys.find(x=>x.id===editingSurveyId);
-    const locked=hasAnswers(editingSurveyId);
+    var s = DB.surveys.find(function(x){ return x.id===editingSurveyId; });
+    var locked = hasAnswers(editingSurveyId);
     s.title=title; s.desc=desc; s.deadline=deadline;
-    if(!locked){ s.dates=[...editingDates].sort(); s.questions=editingQuestions.map((q,i)=>({id:i+1,...q,options:[...q.options]})); }
-    await window.updateSurvey(editingSurveyId, {title, desc, deadline, ...(locked?{}:{dates:s.dates, questions:s.questions})});
+    var updateData = {title:title, desc:desc, deadline:deadline};
+    if(!locked){
+      s.dates=[...editingDates].sort(); s.questions=editingQuestions.map(function(q,i){ return Object.assign({id:i+1},q,{options:[...q.options]}); });
+      updateData.dates=s.dates; updateData.questions=s.questions;
+    }
+    await db.collection('surveys').doc(editingSurveyId).update(updateData);
     editingSurveyId=null; showPage('surveys');
   } else {
     if(t==='normal'&&!editingQuestions.length){ alert('質問を追加してください'); return; }
     if(t==='date'&&editingDates.size===0){ alert('日程を1つ以上選択してください'); return; }
-    const data={
-      communityId:currentCommunityId, type:t, title, desc, deadline,
+    var data = {
+      communityId:currentCommunityId, type:t, title:title, desc:desc, deadline:deadline,
       created:today, createdBy:cu.id,
-      questions:t==='normal'?editingQuestions.map((q,i)=>({id:i+1,...q,options:[...q.options]})):[],
+      questions:t==='normal'?editingQuestions.map(function(q,i){ return Object.assign({id:i+1},q,{options:[...q.options]}); }):[],
       dates:t==='date'?[...editingDates].sort():[],
       spreadsheetUrl:''
     };
-    const id = await window.saveSurvey(data);
-    DB.surveys.push({id,...data});
+    var ref = await db.collection('surveys').add(data);
+    DB.surveys.push(Object.assign({id:ref.id},data));
     showPage('surveys');
   }
 }
 
-// Answer
+// ============================================================
+// 回答
+// ============================================================
 function openAnswer(sid, ret){
-  answerReturnPage=ret||'surveys'; currentAnswerSurveyId=sid;
-  const s=DB.surveys.find(x=>x.id===sid);
-  document.getElementById('answer-survey-title').textContent=s.title;
-  document.getElementById('answer-survey-desc').textContent=s.desc;
-  document.getElementById('answer-expired-notice').style.display=isExpired(s)?'flex':'none';
-  Object.keys(attState).forEach(k=>delete attState[k]);
-  let html='';
+  answerReturnPage = ret||'surveys'; currentAnswerSurveyId = sid;
+  var s = DB.surveys.find(function(x){ return x.id===sid; });
+  document.getElementById('answer-survey-title').textContent = s.title;
+  document.getElementById('answer-survey-desc').textContent = s.desc;
+  document.getElementById('answer-expired-notice').style.display = isExpired(s)?'flex':'none';
+  Object.keys(attState).forEach(function(k){ delete attState[k]; });
+  var html = '';
   if(s.type==='date'){
-    html=`<div class="att-answer-table"><table>
-      <thead><tr><th>日程</th><th>出席</th><th>遅刻</th><th>欠席</th></tr></thead><tbody>`+
-      (s.dates||[]).map(d=>`<tr>
-        <td>${fmtDate(d)}</td>
-        <td><button class="ans-btn" id="ans_${d}_attend" onclick="toggleAns('${d}','attend')">出席</button></td>
-        <td><button class="ans-btn" id="ans_${d}_late" onclick="toggleAns('${d}','late')">遅刻</button></td>
-        <td><button class="ans-btn" id="ans_${d}_absent" onclick="toggleAns('${d}','absent')">欠席</button></td>
-      </tr>`).join('')+
-      `</tbody></table></div><p style="font-size:12px;color:var(--text-secondary)">各日程ごとに1つ選択してください</p>`;
+    html = '<div class="att-answer-table"><table><thead><tr><th>日程</th><th>出席</th><th>遅刻</th><th>欠席</th></tr></thead><tbody>'
+      +(s.dates||[]).map(function(d){
+        return '<tr><td>'+fmtDate(d)+'</td>'
+          +'<td><button class="ans-btn" id="ans_'+d+'_attend" onclick="toggleAns(\''+d+'\',\'attend\')">出席</button></td>'
+          +'<td><button class="ans-btn" id="ans_'+d+'_late" onclick="toggleAns(\''+d+'\',\'late\')">遅刻</button></td>'
+          +'<td><button class="ans-btn" id="ans_'+d+'_absent" onclick="toggleAns(\''+d+'\',\'absent\')">欠席</button></td></tr>';
+      }).join('')
+      +'</tbody></table></div><p style="font-size:12px;color:var(--text-secondary)">各日程ごとに1つ選択してください</p>';
   } else {
-    html=(s.questions||[]).map((q,i)=>`<div class="q-card"><p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">質問 ${i+1}</p><p style="font-size:14px;font-weight:500;margin-bottom:12px">${q.text}</p>${q.type==='radio'?`<div class="radio-group">${(q.options||[]).map(o=>`<label class="radio-item"><input type="radio" name="q${q.id}" value="${o}"> ${o}</label>`).join('')}</div>`:`<textarea class="form-input" id="tq${q.id}" placeholder="回答を入力してください"></textarea>`}</div>`).join('');
+    html = (s.questions||[]).map(function(q,i){
+      return '<div class="q-card"><p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">質問 '+(i+1)+'</p><p style="font-size:14px;font-weight:500;margin-bottom:12px">'+q.text+'</p>'
+        +(q.type==='radio'?'<div class="radio-group">'+(q.options||[]).map(function(o){ return '<label class="radio-item"><input type="radio" name="q'+q.id+'" value="'+o+'"> '+o+'</label>'; }).join('')+'</div>'
+        :'<textarea class="form-input" id="tq'+q.id+'" placeholder="回答を入力してください"></textarea>')
+        +'</div>';
+    }).join('');
   }
-  document.getElementById('answer-questions').innerHTML=html;
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('answer-questions').innerHTML = html;
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-answer').classList.add('active');
 }
 
 function toggleAns(date, choice){
-  attState[date]=choice;
-  ['attend','late','absent'].forEach(c=>{
-    const btn=document.getElementById(`ans_${date}_${c}`);
-    if(btn) btn.className='ans-btn'+(attState[date]===c?' sel-'+c:'');
+  attState[date] = choice;
+  ['attend','late','absent'].forEach(function(c){
+    var btn = document.getElementById('ans_'+date+'_'+c);
+    if(btn) btn.className = 'ans-btn'+(attState[date]===c?' sel-'+c:'');
   });
 }
 
 function goBackFromAnswer(){ showPage(answerReturnPage); }
 
 async function submitAnswer(){
-  const s = DB.surveys.find(x => x.id === currentAnswerSurveyId);
-  let responses = {};
-  if(s.type === 'date') responses = {...attState};
-  else (s.questions||[]).forEach(q => {
-    if(q.type === 'radio'){ const r = document.querySelector(`input[name="q${q.id}"]:checked`); responses[q.id] = r ? r.value : ''; }
-    else { const el = document.getElementById('tq'+q.id); responses[q.id] = el ? el.value : ''; }
-  });
-
-  const data = { userId: cu.id, surveyId: currentAnswerSurveyId, answeredAt: today, responses };
-  await window.saveAnswer(data);
+  var s = DB.surveys.find(function(x){ return x.id===currentAnswerSurveyId; });
+  var responses = {};
+  if(s.type==='date'){
+    responses = Object.assign({},attState);
+  } else {
+    (s.questions||[]).forEach(function(q){
+      if(q.type==='radio'){ var r=document.querySelector('input[name="q'+q.id+'"]:checked'); responses[q.id]=r?r.value:''; }
+      else{ var el=document.getElementById('tq'+q.id); responses[q.id]=el?el.value:''; }
+    });
+  }
+  var data = {userId:cu.id, surveyId:currentAnswerSurveyId, answeredAt:today, responses:responses};
+  await db.collection('answers').add(data);
   DB.answers.push(data);
 
-  // GASにデータを送信してスプレッドシートに自動追記
-  try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'addAnswer',
-        surveyTitle: s.title,
-        surveyType: s.type,
-        userName: cu.name,
-        userEmail: cu.email,
-        answeredAt: today,
-        responses: responses,
-        dates: s.dates || [],
-        questions: s.questions || []
-      })
-    });
-  } catch(e) {
-    console.log('スプレッドシート同期エラー:', e);
+  // GASでスプレッドシートに自動追記
+  if(GAS_URL && GAS_URL !== 'YOUR_GAS_URL'){
+    try {
+      fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({
+          action:'addAnswer',
+          surveyTitle:s.title,
+          surveyType:s.type,
+          userName:cu.name,
+          userEmail:cu.email,
+          answeredAt:today,
+          responses:responses,
+          dates:s.dates||[],
+          questions:s.questions||[]
+        })
+      });
+    } catch(e){ console.log('スプレッドシート同期エラー:',e); }
   }
-
   showPage(answerReturnPage);
 }
 
+// ============================================================
+// 削除
+// ============================================================
 function openDeleteModal(sid){
-  const s=DB.surveys.find(x=>x.id===sid);
+  var s = DB.surveys.find(function(x){ return x.id===sid; });
   if(s.createdBy!==cu.id){ alert('削除権限がありません'); return; }
   deletingSurveyId=sid;
   document.getElementById('delete-survey-name').textContent=s.title;
@@ -921,165 +905,229 @@ function openDeleteModal(sid){
 }
 
 async function confirmDelete(){
-  await window.deleteSurveyDB(deletingSurveyId);
-  DB.surveys=DB.surveys.filter(s=>s.id!==deletingSurveyId);
-  DB.answers=DB.answers.filter(a=>a.surveyId!==deletingSurveyId);
-  closeModal('delete-modal');
-  renderSurveys();
+  await db.collection('surveys').doc(deletingSurveyId).delete();
+  DB.surveys=DB.surveys.filter(function(s){ return s.id!==deletingSurveyId; });
+  closeModal('delete-modal'); renderSurveys();
 }
 
-// Admin
+// ============================================================
+// 管理画面
+// ============================================================
 async function renderAdmin(){
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
-  document.getElementById('admin-sub').textContent=c?`${c.name}の管理画面`:'';
-  const surveys=communitySurveys();
-  DB.answers = await window.fetchAnswers(currentCommunityId) || [];
+  var c = DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  document.getElementById('admin-sub').textContent = c ? c.name+'の管理画面' : '';
+  var surveys = communitySurveys();
+  var memberIds = c ? c.members : [];
 
-  // メンバー一覧（Firestoreから取得）
-  const memberIds = c ? c.members : [];
-  DB.users = [];
-  for(const uid of memberIds){
-    try{
-      const res = await fetch(`https://firestore.googleapis.com/v1/projects/${cu.projectId||'surveyhub-fe3d8'}/databases/(default)/documents/users/${uid}`);
-      // Firestoreから直接取得できないのでDB.usersに追加済みのものを使う
-    } catch(e){}
+  // メンバー情報を取得
+  var memberInfo = [];
+  for(var i=0;i<memberIds.length;i++){
+    var uid = memberIds[i];
+    if(DB.userCache[uid]){
+      memberInfo.push(DB.userCache[uid]);
+    } else {
+      try{
+        var uSnap = await db.collection('users').doc(uid).get();
+        if(uSnap.exists){ DB.userCache[uid]=Object.assign({id:uid},uSnap.data()); memberInfo.push(DB.userCache[uid]); }
+        else { memberInfo.push({id:uid,name:uid,email:''}); }
+      } catch(e){ memberInfo.push({id:uid,name:uid,email:''}); }
+    }
   }
 
-  document.getElementById('member-tbody').innerHTML=memberIds.map(uid=>{
-    const ans=surveys.filter(s=>DB.answers.some(a=>a.userId===uid&&a.surveyId===s.id)).length;
-    const rate=surveys.length?Math.round(ans/surveys.length*100):0;
-    const name=uid===cu.id?cu.name:uid;
-    return `<tr><td>${name}</td><td style="color:var(--text-secondary)">${rate}%</td><td><strong>${rate}%</strong> <span style="font-size:12px;color:var(--text-secondary)">(${ans}/${surveys.length})</span></td></tr>`;
+  // 全回答を取得
+  var allAnswers = [];
+  for(var j=0;j<surveys.length;j++){
+    var aSnap = await db.collection('answers').where('surveyId','==',surveys[j].id).get();
+    aSnap.docs.forEach(function(d){ allAnswers.push(Object.assign({id:d.id},d.data())); });
+  }
+  DB.answers = allAnswers;
+
+  document.getElementById('member-tbody').innerHTML = memberInfo.map(function(u){
+    var ans = surveys.filter(function(s){ return allAnswers.some(function(a){ return a.userId===u.id&&a.surveyId===s.id; }); }).length;
+    var rate = surveys.length ? Math.round(ans/surveys.length*100) : 0;
+    return '<tr><td>'+u.name+'</td><td style="color:var(--text-secondary)">'+u.email+'</td><td><strong>'+rate+'%</strong> <span style="font-size:12px;color:var(--text-secondary)">('+ans+'/'+surveys.length+')</span></td></tr>';
   }).join('');
 
-  const opts=surveys.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
-  document.getElementById('results-select').innerHTML=opts;
+  var opts = surveys.map(function(s){ return '<option value="'+s.id+'">'+s.title+'</option>'; }).join('');
+  document.getElementById('results-select').innerHTML = opts;
   showResults();
 }
 
 function switchAdminTab(tab){
-  document.querySelectorAll('#page-admin .tab-btn').forEach((b,i)=>b.classList.toggle('active',['members','results'][i]===tab));
-  document.querySelectorAll('#page-admin .tab-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('#page-admin .tab-btn').forEach(function(b,i){ b.classList.toggle('active',['members','results'][i]===tab); });
+  document.querySelectorAll('#page-admin .tab-section').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById('admin-tab-'+tab).classList.add('active');
 }
 
-const ANS_LABEL={attend:'出席',late:'遅刻',absent:'欠席'};
-const ANS_CHIP={attend:'chip-attend',late:'chip-late',absent:'chip-absent'};
-
 async function showResults(){
-  const id=document.getElementById('results-select').value;
-  const s=DB.surveys.find(x=>x.id===id);
+  var id = document.getElementById('results-select').value;
+  var s = DB.surveys.find(function(x){ return x.id===id; });
   if(!s){ document.getElementById('results-content').innerHTML=''; return; }
-  const answers = await window.fetchAnswers(id);
-  const memberIds = DB.communities.find(x=>x.id===currentCommunityId)?.members || [];
-  let html='';
+  var c = DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  var memberIds = c ? c.members : [];
+  var aSnap = await db.collection('answers').where('surveyId','==',id).get();
+  var answers = aSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+  var html = '';
   if(s.type==='date'){
-    html=`<div class="summary-wrap"><div class="summary-table-inner"><table>
-      <thead><tr><th>ユーザー</th>${(s.dates||[]).map(d=>`<th>${fmtDate(d)}</th>`).join('')}</tr></thead><tbody>`+
-      memberIds.map(uid=>{
-        const a=answers.find(x=>x.userId===uid);
-        const name=uid===cu.id?cu.name:uid;
-        return `<tr><td>${name}</td>${(s.dates||[]).map(d=>{
-          if(!a) return `<td style="color:var(--text-secondary)">—</td>`;
-          const v=a.responses[d];
-          return v?`<td><span class="count-chip ${ANS_CHIP[v]}">${ANS_LABEL[v]}</span></td>`:`<td style="color:var(--text-secondary)">—</td>`;
-        }).join('')}</tr>`;
-      }).join('')+
-      `</tbody></table></div></div>`;
-    html+=`<p style="font-size:13px;font-weight:600;margin-bottom:8px;margin-top:14px">日程別集計</p><div style="display:flex;gap:8px;flex-wrap:wrap">`;
-    (s.dates||[]).forEach(d=>{
-      const at=answers.filter(a=>a.responses[d]==='attend').length;
-      const la=answers.filter(a=>a.responses[d]==='late').length;
-      const ab=answers.filter(a=>a.responses[d]==='absent').length;
-      html+=`<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 14px;font-size:13px"><p style="font-weight:600;margin-bottom:6px">${fmtDate(d)}</p><span class="count-chip chip-attend">出席 ${at}</span> <span class="count-chip chip-late">遅刻 ${la}</span> <span class="count-chip chip-absent">欠席 ${ab}</span></div>`;
+    html = '<div class="summary-wrap"><div class="summary-table-inner"><table><thead><tr><th>名前</th>'+(s.dates||[]).map(function(d){ return '<th>'+fmtDate(d)+'</th>'; }).join('')+'</tr></thead><tbody>'
+      +memberIds.map(function(uid){
+        var a = answers.find(function(x){ return x.userId===uid; });
+        var name = DB.userCache[uid] ? DB.userCache[uid].name : uid;
+        return '<tr><td>'+name+'</td>'+(s.dates||[]).map(function(d){
+          if(!a) return '<td style="color:var(--text-secondary)">—</td>';
+          var v = a.responses[d];
+          return v?'<td><span class="count-chip '+ANS_CHIP[v]+'">'+ANS_LABEL[v]+'</span></td>':'<td style="color:var(--text-secondary)">—</td>';
+        }).join('')+'</tr>';
+      }).join('')+'</tbody></table></div></div>';
+    html += '<p style="font-size:13px;font-weight:600;margin-bottom:8px;margin-top:14px">日程別集計</p><div style="display:flex;gap:8px;flex-wrap:wrap">';
+    (s.dates||[]).forEach(function(d){
+      var at=answers.filter(function(a){ return a.responses[d]==='attend'; }).length;
+      var la=answers.filter(function(a){ return a.responses[d]==='late'; }).length;
+      var ab=answers.filter(function(a){ return a.responses[d]==='absent'; }).length;
+      html += '<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 14px;font-size:13px"><p style="font-weight:600;margin-bottom:6px">'+fmtDate(d)+'</p><span class="count-chip chip-attend">出席 '+at+'</span> <span class="count-chip chip-late">遅刻 '+la+'</span> <span class="count-chip chip-absent">欠席 '+ab+'</span></div>';
     });
-    html+='</div>';
+    html += '</div>';
   } else {
-    html=`<div class="admin-table-wrap"><table><thead><tr><th>ユーザー</th><th>状況</th><th>日時</th></tr></thead><tbody>`+
-    memberIds.map(uid=>{
-      const a=answers.find(x=>x.userId===uid);
-      const name=uid===cu.id?cu.name:uid;
-      return `<tr><td>${name}</td><td>${a?'<span class="dot dot-yes"></span>回答済み':'<span class="dot dot-no"></span>未回答'}</td><td style="color:var(--text-secondary)">${a?a.answeredAt:'—'}</td></tr>`;
-    }).join('')+`</tbody></table></div>`;
+    html = '<div class="admin-table-wrap"><table><thead><tr><th>ユーザー</th><th>状況</th><th>日時</th></tr></thead><tbody>'
+      +memberIds.map(function(uid){
+        var a = answers.find(function(x){ return x.userId===uid; });
+        var name = DB.userCache[uid] ? DB.userCache[uid].name : uid;
+        return '<tr><td>'+name+'</td><td>'+(a?'<span class="dot dot-yes"></span>回答済み':'<span class="dot dot-no"></span>未回答')+'</td><td style="color:var(--text-secondary)">'+(a?a.answeredAt:'—')+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
   }
 
   // スプレッドシートボタン
-  const sheetBtn = s.spreadsheetUrl
-    ? `<a href="${s.spreadsheetUrl}" target="_blank" class="btn-green" style="display:inline-block;margin-top:14px;text-decoration:none">📊 スプレッドシートを開く</a>`
-    : `<button class="btn-green" style="margin-top:14px" onclick="createSpreadsheet('${s.id}')">📊 スプレッドシートを自動作成</button>`;
+  var sheetBtn = s.spreadsheetUrl
+    ? '<a href="'+s.spreadsheetUrl+'" target="_blank" class="btn-green" style="display:inline-block;margin-top:14px;text-decoration:none">📊 スプレッドシートを開く</a>'
+    : '<button class="btn-green" style="margin-top:14px" onclick="createSpreadsheet(\''+s.id+'\')">📊 スプレッドシートを自動作成</button>';
   html += sheetBtn;
-
-  document.getElementById('results-content').innerHTML=html;
+  document.getElementById('results-content').innerHTML = html;
 }
 
-// Google Sheets連携
+// ============================================================
+// Googleスプレッドシート自動作成
+// ============================================================
 async function createSpreadsheet(surveyId){
-  const tokenClient = google.accounts.oauth2.initTokenClient({
+  var tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
-    callback: async (response) => {
+    callback: async function(response){
       if(response.error){ alert('Googleログインに失敗しました'); return; }
       googleAccessToken = response.access_token;
       await _doCreateSpreadsheet(surveyId);
-    },
+    }
   });
   tokenClient.requestAccessToken();
 }
 
 async function _doCreateSpreadsheet(surveyId){
-  const s=DB.surveys.find(x=>x.id===surveyId);
-  const answers = await window.fetchAnswers(surveyId);
-  const memberIds = DB.communities.find(x=>x.id===currentCommunityId)?.members || [];
-  let values=[];
+  var s = DB.surveys.find(function(x){ return x.id===surveyId; });
+  var aSnap = await db.collection('answers').where('surveyId','==',surveyId).get();
+  var answers = aSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+  var c = DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  var memberIds = c ? c.members : [];
+  var values = [];
   if(s.type==='date'){
-    values.push(['ユーザーID','回答日時',...(s.dates||[]).map(d=>fmtDate(d))]);
-    memberIds.forEach(uid=>{
-      const a=answers.find(x=>x.userId===uid);
-      const name=uid===cu.id?cu.name:uid;
-      values.push([name, a?a.answeredAt:'未回答', ...(s.dates||[]).map(d=>a?(ANS_LABEL[a.responses[d]]||'—'):'')]);
+    values.push(['名前','回答日時'].concat((s.dates||[]).map(fmtDate)));
+    memberIds.forEach(function(uid){
+      var a = answers.find(function(x){ return x.userId===uid; });
+      var name = DB.userCache[uid] ? DB.userCache[uid].name : uid;
+      values.push([name, a?a.answeredAt:'未回答'].concat((s.dates||[]).map(function(d){ return a?(ANS_LABEL[a.responses[d]]||'—'):''; })));
     });
-    values.push(['集計（出席）','',...(s.dates||[]).map(d=>answers.filter(a=>a.responses[d]==='attend').length+'人')]);
+    values.push(['集計（出席）',''].concat((s.dates||[]).map(function(d){ return answers.filter(function(a){ return a.responses[d]==='attend'; }).length+'人'; })));
   } else {
-    values.push(['ユーザーID','回答日時',...(s.questions||[]).map(q=>q.text)]);
-    memberIds.forEach(uid=>{
-      const a=answers.find(x=>x.userId===uid);
-      const name=uid===cu.id?cu.name:uid;
-      values.push([name, a?a.answeredAt:'未回答', ...(s.questions||[]).map(q=>a?a.responses[q.id]||'':'')]);
+    values.push(['名前','回答日時'].concat((s.questions||[]).map(function(q){ return q.text; })));
+    memberIds.forEach(function(uid){
+      var a = answers.find(function(x){ return x.userId===uid; });
+      var name = DB.userCache[uid] ? DB.userCache[uid].name : uid;
+      values.push([name, a?a.answeredAt:'未回答'].concat((s.questions||[]).map(function(q){ return a?a.responses[q.id]||'':''; })));
     });
   }
-
   try{
-    const createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+    var createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets',{
       method:'POST',
-      headers:{ 'Authorization':`Bearer ${googleAccessToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ properties:{ title: s.title }, sheets:[{ properties:{ title:'回答データ' } }] })
+      headers:{'Authorization':'Bearer '+googleAccessToken,'Content-Type':'application/json'},
+      body: JSON.stringify({properties:{title:s.title},sheets:[{properties:{title:'回答データ'}}]})
     });
-    const sheet = await createRes.json();
-    const spreadsheetId = sheet.spreadsheetId;
-    const spreadsheetUrl = sheet.spreadsheetUrl;
-
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/%E5%9B%9E%E7%AD%94%E3%83%87%E3%83%BC%E3%82%BF!A1:Z1000?valueInputOption=RAW`, {
+    var sheet = await createRes.json();
+    var spreadsheetId = sheet.spreadsheetId;
+    var spreadsheetUrl = sheet.spreadsheetUrl;
+    await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+spreadsheetId+'/values/%E5%9B%9E%E7%AD%94%E3%83%87%E3%83%BC%E3%82%BF!A1:Z1000?valueInputOption=RAW',{
       method:'PUT',
-      headers:{ 'Authorization':`Bearer ${googleAccessToken}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ values })
+      headers:{'Authorization':'Bearer '+googleAccessToken,'Content-Type':'application/json'},
+      body: JSON.stringify({values:values})
     });
-
-    await window.saveSpreadsheetUrl(surveyId, spreadsheetUrl);
-    const survey = DB.surveys.find(x=>x.id===surveyId);
+    await db.collection('surveys').doc(surveyId).update({spreadsheetUrl:spreadsheetUrl});
+    var survey = DB.surveys.find(function(x){ return x.id===surveyId; });
     if(survey) survey.spreadsheetUrl = spreadsheetUrl;
-
     alert('スプレッドシートを作成しました！');
     showResults();
-  } catch(e){
-    alert('エラーが発生しました：'+e.message);
-  }
+  } catch(e){ alert('エラーが発生しました：'+e.message); }
 }
 
-// Community
+// ============================================================
+// コミュニティ検索・参加・作成
+// ============================================================
 async function searchCommunities(q){
-  const res=document.getElementById('community-search-results');
+  var res = document.getElementById('community-search-results');
   document.getElementById('join-pw-section').style.display='none';
   if(!q.trim()){ res.innerHTML=''; return; }
-  const found = await window.searchCommunitiesByName(q);
-  const filtered = found.filter(c=>!c.members.includes(cu.id));
-  if(!fil
+  var snap = await db.collection('communities').get();
+  var found = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); }).filter(function(c){ return c.name.includes(q)&&!c.members.includes(cu.id); });
+  if(!found.length){ res.innerHTML='<p style="font-size:13px;color:var(--text-secondary);padding:10px">見つかりませんでした</p>'; return; }
+  res.className='search-results';
+  res.innerHTML = found.map(function(c){ return '<div class="search-result-item" onclick="selectCommunityToJoin(\''+c.id+'\',\''+c.name+'\')"><span>'+c.icon+' '+c.name+'</span></div>'; }).join('');
+}
+
+function selectCommunityToJoin(id, name){
+  joinTargetId=id;
+  document.getElementById('join-target-name').textContent='「'+name+'」に参加';
+  document.getElementById('join-password').value='';
+  document.getElementById('join-pw-error').style.display='none';
+  document.getElementById('join-pw-section').style.display='block';
+  document.getElementById('community-search-results').innerHTML='';
+}
+
+async function joinCommunity(){
+  var pw = document.getElementById('join-password').value;
+  var errEl = document.getElementById('join-pw-error');
+  var snap = await db.collection('communities').doc(joinTargetId).get();
+  var c = snap.data();
+  if(!pw){ errEl.textContent='パスワードを入力してください'; errEl.style.display='block'; return; }
+  if(c.password!==pw){ errEl.textContent='パスワードが違います'; errEl.style.display='block'; return; }
+  var members = c.members || [];
+  if(!members.includes(cu.id)) members.push(cu.id);
+  await db.collection('communities').doc(joinTargetId).update({members:members});
+  closeModal('join-modal');
+  renderMyCommunities();
+}
+
+function selectIcon(el, icon){
+  selectedIcon=icon;
+  document.querySelectorAll('#icon-picker span').forEach(function(s){ s.style.border='2px solid transparent'; });
+  el.style.border='2px solid var(--green)';
+}
+
+async function createCommunity(){
+  var name = document.getElementById('cc-name').value.trim();
+  var desc = document.getElementById('cc-desc').value.trim();
+  var pw = document.getElementById('cc-password').value;
+  var errEl = document.getElementById('cc-error');
+  if(!name){ errEl.textContent='コミュニティ名を入力してください'; errEl.style.display='block'; return; }
+  if(!pw){ errEl.textContent='パスワードを設定してください'; errEl.style.display='block'; return; }
+  var data = {name:name, desc:desc, icon:selectedIcon, password:pw, createdBy:cu.id, members:[cu.id], created:today};
+  var ref = await db.collection('communities').add(data);
+  DB.communities.push(Object.assign({id:ref.id},data));
+  closeModal('create-community-modal');
+  document.getElementById('cc-name').value='';
+  document.getElementById('cc-desc').value='';
+  document.getElementById('cc-password').value='';
+  errEl.style.display='none';
+  renderMyCommunities();
+}
+
+function openModal(id){ document.getElementById(id).style.display='flex'; }
+function closeModal(id){ document.getElementById(id).style.display='none'; }
+</script>
+</body>
+</html>
