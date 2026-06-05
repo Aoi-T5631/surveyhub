@@ -1120,8 +1120,10 @@ function _doCreateSpreadsheet(surveyId){
         return db.collection('surveys').doc(surveyId).update({spreadsheetUrl:spreadsheetUrl}).then(function(){
           var survey = DB.surveys.find(function(x){ return x.id===surveyId; });
           if(survey) survey.spreadsheetUrl = spreadsheetUrl;
-          window.open(spreadsheetUrl, '_blank');
-showResults();
+         showResults();
+setTimeout(function(){
+  window.open(spreadsheetUrl, '_blank');
+}, 500);
         });
       });
     })
