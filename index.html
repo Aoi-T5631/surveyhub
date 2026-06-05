@@ -172,6 +172,9 @@ tr:last-child td{border-bottom:none}
   .type-chip{padding:5px 10px;font-size:12px}
 }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -403,10 +406,7 @@ tr:last-child td{border-bottom:none}
 <!-- Firebase SDK -->
 <script>
  </script>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script>
   // ★ 自分のfirebaseConfigに書き換えてください
 const firebaseConfig = {
   apiKey: "AIzaSyBFN_2SAipFWBX-zFNKjnZfKdQFGrj4RBQ",
@@ -416,14 +416,15 @@ const firebaseConfig = {
   messagingSenderId: "725766481512",
   appId: "1:725766481512:web:4cf9bba1fa34b1b901bddd"
 };
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
 
-  onAuthStateChanged(auth, async (user) => {
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  auth.onAuthStateChanged(async (user) => {
     if (user) {
-      const docSnap = await getDoc(doc(db, "users", user.uid));
-      if (docSnap.exists()) {
+      const docSnap = await db.collection('users').doc(user.uid).get();
+      if (docSnap.exists) {
         cu = docSnap.data();
         cu.id = user.uid;
         document.getElementById('main-nav').style.display='flex';
@@ -435,8 +436,8 @@ const firebaseConfig = {
   });
 
   window.handleRegister = async (name, email, pass) => {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await setDoc(doc(db, "users", cred.user.uid), { name, email, joined: today, role: 'user' });
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await db.collection('users').doc(cred.user.uid).set({ name, email, joined: today, role: 'user' });
     cu = { id: cred.user.uid, name, email, joined: today };
     document.getElementById('main-nav').style.display='flex';
     document.getElementById('nav-name').textContent=cu.name;
@@ -445,8 +446,8 @@ const firebaseConfig = {
   };
 
   window.handleLogin = async (email, pass) => {
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
-    const docSnap = await getDoc(doc(db, "users", cred.user.uid));
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    const docSnap = await db.collection('users').doc(cred.user.uid).get();
     cu = docSnap.data();
     cu.id = cred.user.uid;
     document.getElementById('main-nav').style.display='flex';
@@ -456,7 +457,7 @@ const firebaseConfig = {
   };
 
   window.handleLogout = async () => {
-    await signOut(auth);
+    await auth.signOut();
     cu = null; currentCommunityId = null;
     document.getElementById('main-nav').style.display='none';
     setNavLinks(false);
@@ -465,62 +466,59 @@ const firebaseConfig = {
   };
 
   window.saveCommunity = async (data) => {
-    const ref = await addDoc(collection(db, "communities"), data);
+    const ref = await db.collection('communities').add(data);
     return ref.id;
   };
 
   window.fetchCommunities = async (uid) => {
-    const q = query(collection(db, "communities"), where("members", "array-contains", uid));
-    const snap = await getDocs(q);
+    const snap = await db.collection('communities').where('members','array-contains',uid).get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   };
 
   window.searchCommunitiesByName = async (name) => {
-    const snap = await getDocs(collection(db, "communities"));
+    const snap = await db.collection('communities').get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.name.includes(name));
   };
 
   window.joinCommunityDB = async (communityId, uid) => {
-    const ref = doc(db, "communities", communityId);
-    const snap = await getDoc(ref);
+    const ref = db.collection('communities').doc(communityId);
+    const snap = await ref.get();
     const data = snap.data();
     if (!data.members.includes(uid)) {
       data.members.push(uid);
-      await setDoc(ref, data);
+      await ref.set(data);
     }
   };
 
   window.saveSurvey = async (data) => {
-    const ref = await addDoc(collection(db, "surveys"), data);
+    const ref = await db.collection('surveys').add(data);
     return ref.id;
   };
 
   window.updateSurvey = async (surveyId, data) => {
-    await updateDoc(doc(db, "surveys", surveyId), data);
+    await db.collection('surveys').doc(surveyId).update(data);
   };
 
   window.fetchSurveys = async (communityId) => {
-    const q = query(collection(db, "surveys"), where("communityId", "==", communityId));
-    const snap = await getDocs(q);
+    const snap = await db.collection('surveys').where('communityId','==',communityId).get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   };
 
   window.saveAnswer = async (data) => {
-    await addDoc(collection(db, "answers"), data);
+    await db.collection('answers').add(data);
   };
 
   window.fetchAnswers = async (surveyId) => {
-    const q = query(collection(db, "answers"), where("surveyId", "==", surveyId));
-    const snap = await getDocs(q);
+    const snap = await db.collection('answers').where('surveyId','==',surveyId).get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   };
 
   window.deleteSurveyDB = async (surveyId) => {
-    await deleteDoc(doc(db, "surveys", surveyId));
+    await db.collection('surveys').doc(surveyId).delete();
   };
 
   window.saveSpreadsheetUrl = async (surveyId, url) => {
-    await updateDoc(doc(db, "surveys", surveyId), { spreadsheetUrl: url });
+    await db.collection('surveys').doc(surveyId).update({ spreadsheetUrl: url });
   };
 </script>
 
