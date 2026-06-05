@@ -401,11 +401,12 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- Firebase SDK -->
+<script>
+ </script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
   // ★ 自分のfirebaseConfigに書き換えてください
 const firebaseConfig = {
   apiKey: "AIzaSyBFN_2SAipFWBX-zFNKjnZfKdQFGrj4RBQ",
