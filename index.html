@@ -420,7 +420,8 @@ const firebaseConfig = {
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
-
+var cu = null;
+var currentCommunityId = null;
   auth.onAuthStateChanged(async (user) => {
     if (user) {
       const docSnap = await db.collection('users').doc(user.uid).get();
@@ -532,7 +533,6 @@ let googleAccessToken = null;
 // ★ GASのURLに書き換えてください
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzoarxgfbHMqPeeOCF68eKhBAtJAj1lat4jBQivaqqDi4tar7Xn5BYA2fUkUqoiqA-_/exec';
 
-let cu=null, currentCommunityId=null, editingSurveyId=null, deletingSurveyId=null;
 let editingQuestions=[], editingDates=new Set(), currentSurveyType='normal';
 let answerReturnPage='surveys', joinTargetId=null, selectedIcon='🏢';
 let isLogin=true, currentAnswerSurveyId=null;
