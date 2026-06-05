@@ -422,19 +422,20 @@ const firebaseConfig = {
   const db = firebase.firestore();
 var cu = null;
 var currentCommunityId = null;
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      const docSnap = await db.collection('users').doc(user.uid).get();
-      if (docSnap.exists) {
-        cu = docSnap.data();
-        cu.id = user.uid;
-        document.getElementById('main-nav').style.display='flex';
-        document.getElementById('nav-name').textContent=cu.name;
-        document.getElementById('nav-avatar').textContent=cu.name[0];
-        showCommunityHome(false);
-      }
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    const docSnap = await db.collection('users').doc(user.uid).get();
+    if (docSnap.exists) {
+      cu = docSnap.data();
+      cu.id = user.uid;
+      document.getElementById('main-nav').style.display='flex';
+      document.getElementById('nav-name').textContent=cu.name;
+      document.getElementById('nav-avatar').textContent=cu.name[0];
+      // 通常のscriptが読み込まれるまで少し待つ
+      setTimeout(() => showCommunityHome(false), 100);
     }
-  });
+  }
+});
 
   window.handleRegister = async (name, email, pass) => {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
@@ -444,6 +445,7 @@ var currentCommunityId = null;
     document.getElementById('nav-name').textContent=cu.name;
     document.getElementById('nav-avatar').textContent=cu.name[0];
     showCommunityHome(true);
+    setTimeout(() => showCommunityHome(true), 100);
   };
 
   window.handleLogin = async (email, pass) => {
@@ -455,6 +457,7 @@ var currentCommunityId = null;
     document.getElementById('nav-name').textContent=cu.name;
     document.getElementById('nav-avatar').textContent=cu.name[0];
     showCommunityHome(false);
+    setTimeout(() => showCommunityHome(false), 100);
   };
 
   window.handleLogout = async () => {
