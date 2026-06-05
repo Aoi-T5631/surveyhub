@@ -558,21 +558,25 @@ function showCommunityHome(isNew){
 
 function goHome(){showCommunityHome(false);}
 
-function renderMyCommunities(){
-  const mine=DB.communities.filter(c=>c.members.includes(cu.id));
+async function renderMyCommunities(){
   const grid=document.getElementById('my-community-grid');
+  grid.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">読み込み中...</p>';
+  const mine = await fetchCommunities(cu.id);
+  DB.communities = mine;
   if(!mine.length){grid.innerHTML='<p style="font-size:14px;color:var(--text-secondary);grid-column:1/-1">まだコミュニティに参加していません</p>';return;}
   grid.innerHTML=mine.map(c=>{
     const role=c.createdBy===cu.id?'<span class="community-role role-admin">管理者</span>':'<span class="community-role role-member">メンバー</span>';
-    return `<div class="community-card" onclick="enterCommunity(${c.id})"><div class="community-icon">${c.icon}</div><p class="community-name">${c.name}</p><p class="community-meta">${DB.surveys.filter(s=>s.communityId===c.id).length}件のアンケート</p>${role}</div>`;
+    return `<div class="community-card" onclick="enterCommunity('${c.id}')"><div class="community-icon">${c.icon}</div><p class="community-name">${c.name}</p><p class="community-meta">${(DB.surveys||[]).filter(s=>s.communityId===c.id).length}件のアンケート</p>${role}</div>`;
   }).join('');
 }
 
-function enterCommunity(id){
+async function enterCommunity(id){
   currentCommunityId=id;
   const c=DB.communities.find(x=>x.id===id);
   document.getElementById('nav-community-name').textContent=c.name;
-  setNavLinks(true);document.getElementById('nb-admin').style.display=isAdmin()?'block':'none';
+  setNavLinks(true);
+  document.getElementById('nb-admin').style.display=isAdmin()?'block':'none';
+  DB.surveys = await fetchSurveys(id);
   showPage('surveys');
 }
 
@@ -751,7 +755,7 @@ function renderQBuilder(locked,sid){
       </div>`:'<p style="font-size:13px;color:var(--text-secondary)">自由記述のテキストボックスが表示されます</p>'}
     </div>`).join('');
 }
-function createSurvey(){
+async function createSurvey(){
   const title=document.getElementById('new-survey-title').value.trim();
   const desc=document.getElementById('new-survey-desc').value.trim();
   const deadline=document.getElementById('new-survey-deadline').value;
@@ -766,9 +770,14 @@ function createSurvey(){
   } else {
     if(t==='normal'&&!editingQuestions.length){alert('質問を追加してください');return;}
     if(t==='date'&&editingDates.size===0){alert('日程を1つ以上選択してください');return;}
-    DB.surveys.push({id:DB.surveys.length+1,communityId:currentCommunityId,type:t,title,desc,deadline,created:today,createdBy:cu.id,
+    const data={
+      communityId:currentCommunityId,type:t,title,desc,deadline,
+      created:today,createdBy:cu.id,
       questions:t==='normal'?editingQuestions.map((q,i)=>({id:i+1,...q,options:[...q.options]})):[],
-      dates:t==='date'?[...editingDates].sort():[]});
+      dates:t==='date'?[...editingDates].sort():[]
+    };
+    const id = await saveSurvey(data);
+    DB.surveys.push({id,...data});
     showPage('surveys');
   }
 }
@@ -807,12 +816,17 @@ function toggleAns(date,choice){
   });
 }
 function goBackFromAnswer(){showPage(answerReturnPage);}
-function submitAnswer(){
+async function submitAnswer(){
   const s=DB.surveys.find(x=>x.id===currentAnswerSurveyId);
   let responses={};
   if(s.type==='date') responses={...attState};
-  else s.questions.forEach(q=>{if(q.type==='radio'){const r=document.querySelector(`input[name="q${q.id}"]:checked`);responses[q.id]=r?r.value:'';}else{const el=document.getElementById('tq'+q.id);responses[q.id]=el?el.value:'';}});
-  DB.answers.push({userId:cu.id,surveyId:currentAnswerSurveyId,answeredAt:today,responses});
+  else s.questions.forEach(q=>{
+    if(q.type==='radio'){const r=document.querySelector(`input[name="q${q.id}"]:checked`);responses[q.id]=r?r.value:'';}
+    else{const el=document.getElementById('tq'+q.id);responses[q.id]=el?el.value:'';}
+  });
+  const data={userId:cu.id,surveyId:currentAnswerSurveyId,answeredAt:today,responses};
+  await saveAnswer(data);
+  DB.answers.push(data);
   showPage(answerReturnPage);
 }
 
@@ -821,10 +835,12 @@ function openDeleteModal(sid){
   if(s.createdBy!==cu.id){alert('削除権限がありません');return;}
   deletingSurveyId=sid;document.getElementById('delete-survey-name').textContent=s.title;openModal('delete-modal');
 }
-function confirmDelete(){
+async function confirmDelete(){
+  await deleteSurveyDB(deletingSurveyId);
   DB.surveys=DB.surveys.filter(s=>s.id!==deletingSurveyId);
   DB.answers=DB.answers.filter(a=>a.surveyId!==deletingSurveyId);
-  closeModal('delete-modal');renderSurveys();
+  closeModal('delete-modal');
+  renderSurveys();
 }
 
 /* Admin */
@@ -913,42 +929,56 @@ function previewCSV(){
   document.getElementById('csv-preview').style.display='block';
 }
 
-function searchCommunities(q){
+async function searchCommunities(q){
   const res=document.getElementById('community-search-results');
   document.getElementById('join-pw-section').style.display='none';
   if(!q.trim()){res.innerHTML='';return;}
-  const found=DB.communities.filter(c=>c.name.includes(q)&&!c.members.includes(cu.id));
-  if(!found.length){res.innerHTML='<p style="font-size:13px;color:var(--text-secondary);padding:10px">見つかりませんでした</p>';return;}
+  const found = await searchCommunitiesByName(q);
+  const filtered = found.filter(c=>!c.members.includes(cu.id));
+  if(!filtered.length){res.innerHTML='<p style="font-size:13px;color:var(--text-secondary);padding:10px">見つかりませんでした</p>';return;}
   res.className='search-results';
-  res.innerHTML=found.map(c=>`<div class="search-result-item" onclick="selectCommunityToJoin(${c.id},'${c.name}')"><span>${c.icon} ${c.name}</span><span style="font-size:12px;color:var(--text-secondary)">${DB.surveys.filter(s=>s.communityId===c.id).length}件</span></div>`).join('');
+  res.innerHTML=filtered.map(c=>`<div class="search-result-item" onclick="selectCommunityToJoin('${c.id}','${c.name}')"><span>${c.icon} ${c.name}</span></div>`).join('');
 }
+
 function selectCommunityToJoin(id,name){
-  joinTargetId=id;document.getElementById('join-target-name').textContent=`「${name}」に参加`;
-  document.getElementById('join-password').value='';document.getElementById('join-pw-error').style.display='none';
-  document.getElementById('join-pw-section').style.display='block';document.getElementById('community-search-results').innerHTML='';
+  joinTargetId=id;
+  document.getElementById('join-target-name').textContent=`「${name}」に参加`;
+  document.getElementById('join-password').value='';
+  document.getElementById('join-pw-error').style.display='none';
+  document.getElementById('join-pw-section').style.display='block';
+  document.getElementById('community-search-results').innerHTML='';
 }
-function joinCommunity(){
-  const pw=document.getElementById('join-password').value;const errEl=document.getElementById('join-pw-error');
+async function joinCommunity(){
+  const pw=document.getElementById('join-password').value;
+  const errEl=document.getElementById('join-pw-error');
   const c=DB.communities.find(x=>x.id===joinTargetId);
   if(!pw){errEl.textContent='パスワードを入力してください';errEl.style.display='block';return;}
   if(c.password!==pw){errEl.textContent='パスワードが違います';errEl.style.display='block';return;}
-  c.members.push(cu.id);closeModal('join-modal');renderMyCommunities();
+  await joinCommunityDB(joinTargetId, cu.id);
+  closeModal('join-modal');
+  renderMyCommunities();
 }
 function selectIcon(el,icon){
   selectedIcon=icon;
   document.querySelectorAll('#icon-picker span').forEach(s=>s.style.border='2px solid transparent');
   el.style.border='2px solid var(--green)';
 }
-function createCommunity(){
+async function createCommunity(){
   const name=document.getElementById('cc-name').value.trim();
   const desc=document.getElementById('cc-desc').value.trim();
-  const pw=document.getElementById('cc-password').value;const errEl=document.getElementById('cc-error');
+  const pw=document.getElementById('cc-password').value;
+  const errEl=document.getElementById('cc-error');
   if(!name){errEl.textContent='コミュニティ名を入力してください';errEl.style.display='block';return;}
   if(!pw){errEl.textContent='パスワードを設定してください';errEl.style.display='block';return;}
-  DB.communities.push({id:DB.communities.length+1,name,desc,icon:selectedIcon,password:pw,createdBy:cu.id,members:[cu.id]});
+  const data={name,desc,icon:selectedIcon,password:pw,createdBy:cu.id,members:[cu.id],created:today};
+  const id = await saveCommunity(data);
+  DB.communities.push({id,...data});
   closeModal('create-community-modal');
-  document.getElementById('cc-name').value='';document.getElementById('cc-desc').value='';document.getElementById('cc-password').value='';
-  errEl.style.display='none';renderMyCommunities();
+  document.getElementById('cc-name').value='';
+  document.getElementById('cc-desc').value='';
+  document.getElementById('cc-password').value='';
+  errEl.style.display='none';
+  renderMyCommunities();
 }
 function openModal(id){document.getElementById(id).style.display='flex';}
 function closeModal(id){document.getElementById(id).style.display='none';}
