@@ -4,12 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SurveyHub</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;color:#1a1a1a;background:#f5f5f3}
 :root{
-  --bg-primary:#ffffff;--bg-secondary:#f5f5f3;--bg-tertiary:#efefed;
+  --bg-primary:#ffffff;--bg-secondary:#f5f5f3;
   --bg-info:#e6f1fb;--bg-warn:#faeeda;--bg-danger:#fcebeb;--bg-success:#eaf3de;
   --text-primary:#1a1a1a;--text-secondary:#6b6b6b;--text-info:#185fa5;
   --text-warn:#854f0b;--text-danger:#a32d2d;--text-success:#3b6d11;
@@ -17,26 +21,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
   --green:#1D9E75;--green-light:#E1F5EE;--green-border:#9FE1CB;
   --radius-md:8px;--radius-lg:12px;
 }
-.app{min-height:100vh;display:flex;flex-direction:column;position:relative}
+.app{min-height:100vh;display:flex;flex-direction:column}
 .nav{background:var(--bg-primary);border-bottom:0.5px solid var(--border-light);padding:0 16px;display:flex;align-items:center;gap:4px;height:52px;position:sticky;top:0;z-index:50}
 .nav-brand{font-weight:600;font-size:16px;color:var(--text-primary);cursor:pointer;padding:6px 10px;border-radius:var(--radius-md);margin-right:4px;border:none;background:none;flex-shrink:0}
 .nav-brand:hover{background:var(--bg-secondary)}
 .nav-sep{font-size:12px;color:var(--text-secondary)}
-.nav-community-name{font-weight:500;font-size:13px;color:var(--text-primary);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-community-name{font-weight:500;font-size:13px;color:var(--text-primary);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav-links{display:flex;gap:2px}
 .nav-btn{background:none;border:none;padding:6px 10px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-secondary)}
 .nav-btn:hover{background:var(--bg-secondary);color:var(--text-primary)}
 .nav-btn.active{color:var(--text-primary);font-weight:500}
 .nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;border-left:0.5px solid var(--border-light);padding-left:12px;flex-shrink:0}
-.avatar{width:30px;height:30px;border-radius:50%;background:var(--bg-info);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text-info);cursor:pointer;border:2px solid transparent;transition:border-color .15s;flex-shrink:0}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--bg-info);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text-info);cursor:pointer;border:2px solid transparent;transition:border-color .15s;flex-shrink:0;overflow:hidden}
 .avatar:hover{border-color:var(--green)}
+.avatar img{width:100%;height:100%;object-fit:cover}
 .nav-username{font-size:13px;color:var(--text-secondary)}
 .logout-btn{background:none;border:none;padding:6px 10px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-secondary)}
 .logout-btn:hover{background:var(--bg-secondary)}
 .content{flex:1;padding:24px 20px;max-width:760px;margin:0 auto;width:100%}
 .page{display:none}.page.active{display:block}
-
-/* Forms & Cards */
 .auth-wrap{max-width:380px;margin:50px auto}
 .card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:24px}
 .card-title{font-size:17px;font-weight:600;margin-bottom:4px}
@@ -47,43 +50,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .form-input:focus{border-color:var(--green)}
 .form-hint{font-size:12px;color:var(--text-secondary);margin-top:4px}
 .form-error{font-size:12px;color:var(--text-danger);margin-top:4px;display:none}
-.btn-primary{background:var(--text-primary);color:#fff;border:none;width:100%;padding:10px;border-radius:var(--radius-md);cursor:pointer;font-size:14px;font-weight:600;transition:opacity .15s}
+.btn-primary{background:var(--text-primary);color:#fff;border:none;width:100%;padding:10px;border-radius:var(--radius-md);cursor:pointer;font-size:14px;font-weight:600}
 .btn-primary:hover{opacity:.85}
 .btn-sm{padding:5px 12px;font-size:13px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-primary)}
 .btn-sm:hover{background:var(--bg-secondary)}
-.btn-danger{padding:5px 12px;font-size:13px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid rgba(240,149,149,0.5);background:var(--bg-primary);color:var(--text-danger)}
-.btn-danger:hover{background:var(--bg-danger)}
+.btn-danger-sm{padding:5px 12px;font-size:13px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid rgba(240,149,149,0.5);background:var(--bg-primary);color:var(--text-danger)}
+.btn-danger-sm:hover{background:var(--bg-danger)}
 .btn-green{padding:6px 14px;font-size:13px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid var(--green-border);background:var(--green-light);color:#0F6E56;font-weight:500}
 .btn-green:hover{background:var(--green-border)}
 .link-btn{background:none;border:none;color:var(--text-primary);cursor:pointer;text-decoration:underline;font-size:14px}
 .toggle-row{text-align:center;margin-top:14px;font-size:14px;color:var(--text-secondary)}
-
-/* Banners */
 .banner{padding:11px 14px;border-radius:var(--radius-md);font-size:13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
 .banner-info{background:var(--bg-info);border:0.5px solid #b5d4f4;color:var(--text-info)}
 .banner-warn{background:var(--bg-warn);border:0.5px solid #fac775;color:var(--text-warn)}
-
-/* Layout */
 .page-title{font-size:18px;font-weight:600;margin-bottom:4px}
 .page-sub{font-size:14px;color:var(--text-secondary);margin-bottom:20px}
 .section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .section-title{font-size:15px;font-weight:600}
-
-/* Progress */
 .progress-section{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px}
 .progress-bar-wrap{background:var(--bg-secondary);border-radius:100px;height:12px;overflow:hidden;margin-bottom:8px}
 .progress-bar-fill{height:100%;border-radius:100px;background:var(--green);transition:width .6s cubic-bezier(.4,0,.2,1)}
 .progress-counts{display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary)}
 .breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .breakdown-item{background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px;display:flex;align-items:center;gap:10px}
-
-/* Tabs */
 .tab-bar{display:flex;gap:2px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:3px;margin-bottom:16px}
 .tab-btn{flex:1;text-align:center;padding:7px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text-secondary);border:none;background:none}
 .tab-btn.active{background:var(--bg-primary);color:var(--text-primary);font-weight:500}
 .tab-section{display:none}.tab-section.active{display:block}
-
-/* Surveys */
 .survey-list{display:flex;flex-direction:column;gap:8px}
 .survey-card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:13px 16px}
 .survey-card:hover{border-color:var(--border-mid)}
@@ -98,32 +91,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .badge-mine{background:var(--bg-info);color:var(--text-info)}
 .badge-expired{background:var(--bg-danger);color:var(--text-danger)}
 .badge-date{background:#eeedfe;color:#3c3489}
-
-/* Community */
-.community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:20px}
+.community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px}
 .community-card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:border-color .15s}
 .community-card:hover{border-color:var(--border-mid)}
-.community-icon{width:38px;height:38px;border-radius:10px;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.community-icon{width:52px;height:52px;border-radius:50%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px;overflow:hidden}
+.community-icon img{width:100%;height:100%;object-fit:cover}
 .community-name{font-size:14px;font-weight:500;margin-bottom:2px}
 .community-meta{font-size:12px;color:var(--text-secondary)}
 .community-role{font-size:11px;padding:2px 7px;border-radius:10px;display:inline-block;margin-top:6px;font-weight:500}
 .role-admin{background:var(--bg-info);color:var(--text-info)}
 .role-member{background:var(--bg-secondary);color:var(--text-secondary)}
-
-/* Search */
+.community-btn-row{display:flex;gap:6px;margin-top:6px}
 .search-wrap{position:relative;margin-bottom:8px}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:16px}
 .search-results{background:var(--bg-primary);border:0.5px solid var(--border-mid);border-radius:var(--radius-md);overflow:hidden;margin-top:4px}
-.search-result-item{padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:0.5px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.search-result-item{padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:0.5px solid var(--border-light);display:flex;align-items:center;gap:10px}
 .search-result-item:last-child{border-bottom:none}
 .search-result-item:hover{background:var(--bg-secondary)}
-
-/* Type toggle */
+.search-result-icon{width:32px;height:32px;border-radius:50%;overflow:hidden;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.search-result-icon img{width:100%;height:100%;object-fit:cover}
 .type-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .type-chip{padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary)}
 .type-chip.active{background:var(--text-primary);color:#fff;border-color:var(--text-primary)}
-
-/* Calendar */
 .cal-wrap{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-month{font-size:15px;font-weight:600}
@@ -136,14 +124,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .cal-day.other-month{color:var(--text-secondary);opacity:.4;pointer-events:none}
 .cal-day.selected{background:var(--green);color:#fff;font-weight:600}
 .cal-day.today-mark{font-weight:700;text-decoration:underline}
-.cal-day.sun{color:#e24b4a}
-.cal-day.sat{color:#185fa5}
+.cal-day.sun{color:#e24b4a}.cal-day.sat{color:#185fa5}
 .cal-day.selected.sun,.cal-day.selected.sat{color:#fff}
 .selected-dates{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:28px}
 .date-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg-secondary);border-radius:20px;padding:3px 10px;font-size:12px}
 .date-chip button{background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:13px;line-height:1;padding:0}
-
-/* Answer table */
 .att-answer-table{width:100%;border-radius:var(--radius-lg);overflow:hidden;border:0.5px solid var(--border-light);margin-bottom:16px}
 .att-answer-table table{font-size:13px;width:100%;border-collapse:collapse}
 .att-answer-table th{padding:9px 12px;text-align:center;background:var(--bg-secondary);border-bottom:0.5px solid var(--border-light);font-weight:500;font-size:12px;color:var(--text-secondary)}
@@ -151,20 +136,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .att-answer-table td{padding:8px 10px;text-align:center;border-bottom:0.5px solid var(--border-light)}
 .att-answer-table td:first-child{text-align:left;font-weight:500;white-space:nowrap}
 .att-answer-table tr:last-child td{border-bottom:none}
-.ans-btn{padding:5px 12px;border-radius:6px;border:0.5px solid var(--border-mid);background:var(--bg-primary);cursor:pointer;font-size:12px;font-weight:500;color:var(--text-secondary);transition:all .12s}
-.ans-btn:hover{background:var(--bg-secondary)}
+.ans-btn{padding:5px 12px;border-radius:6px;border:0.5px solid var(--border-mid);background:var(--bg-primary);cursor:pointer;font-size:12px;font-weight:500;color:var(--text-secondary)}
 .ans-btn.sel-attend{background:var(--bg-success);border-color:#9fe1cb;color:#085041}
 .ans-btn.sel-late{background:var(--bg-warn);border-color:#fac775;color:var(--text-warn)}
 .ans-btn.sel-absent{background:var(--bg-danger);border-color:#f09595;color:var(--text-danger)}
-
-/* Q card */
 .q-card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
 .q-builder-item{background:var(--bg-secondary);border-radius:var(--radius-md);padding:14px;margin-bottom:10px}
 .radio-group{display:flex;flex-direction:column;gap:8px}
 .radio-item{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
 textarea.form-input{height:80px;resize:vertical}
-
-/* Summary */
 .summary-wrap{overflow-x:auto;margin-bottom:14px}
 .summary-table-inner{border-radius:var(--radius-lg);overflow:hidden;border:0.5px solid var(--border-light);min-width:360px}
 .summary-table-inner table{font-size:12px;width:100%;border-collapse:collapse}
@@ -177,8 +157,6 @@ textarea.form-input{height:80px;resize:vertical}
 .chip-attend{background:var(--bg-success);color:var(--text-success)}
 .chip-late{background:var(--bg-warn);color:var(--text-warn)}
 .chip-absent{background:var(--bg-danger);color:var(--text-danger)}
-
-/* Admin table */
 .admin-table-wrap{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);overflow:hidden}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th{text-align:left;padding:10px 14px;font-size:12px;font-weight:500;color:var(--text-secondary);border-bottom:0.5px solid var(--border-light);background:var(--bg-secondary)}
@@ -186,45 +164,40 @@ td{padding:10px 14px;border-bottom:0.5px solid var(--border-light);vertical-alig
 tr:last-child td{border-bottom:none}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
 .dot-yes{background:#639922}.dot-no{background:#ef9f27}
-
-/* Modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:200;overflow-y:auto}
 .modal{background:var(--bg-primary);border-radius:var(--radius-lg);border:0.5px solid var(--border-light);padding:24px;width:100%;max-width:460px}
 .modal-title{font-size:16px;font-weight:600;margin-bottom:14px}
-/* 三点メニュー */
-.community-card-wrap{position:relative}
-.community-menu-btn{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-secondary);width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2}
-.community-menu-btn:hover{background:var(--bg-secondary)}
-.community-dropdown{position:absolute;top:36px;right:8px;background:var(--bg-primary);border:0.5px solid var(--border-mid);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:100;min-width:140px;overflow:hidden;display:none}
-.community-dropdown.open{display:block}
-.community-dropdown-item{padding:10px 14px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px}
-.community-dropdown-item:hover{background:var(--bg-secondary)}
-.community-dropdown-item.danger{color:var(--text-danger)}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
-
-/* Responsive */
+.icon-upload-wrap{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.icon-preview{width:64px;height:64px;border-radius:50%;background:var(--bg-secondary);border:0.5px solid var(--border-mid);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon-preview img{width:100%;height:100%;object-fit:cover}
+.icon-preview-placeholder{font-size:24px;color:var(--text-secondary)}
+.icon-upload-btn{padding:7px 16px;font-size:13px;border-radius:var(--radius-md);cursor:pointer;border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-primary)}
+.icon-upload-btn:hover{background:var(--bg-secondary)}
 @media(max-width:600px){
   .content{padding:16px 14px}
-  .nav{padding:0 12px}
+  .nav{padding:0 10px}
   .nav-username{display:none}
+  .nav-brand{padding:6px 6px;font-size:14px}
   .community-grid{grid-template-columns:1fr 1fr}
-  .stats-grid{grid-template-columns:repeat(3,1fr)}
-  .breakdown-grid{grid-template-columns:1fr 1fr}
   .type-toggle{gap:4px}
   .type-chip{padding:5px 10px;font-size:12px}
+  .survey-row{flex-direction:column;align-items:flex-start}
+  .survey-actions{width:100%;justify-content:flex-end}
+  .att-answer-table th,.att-answer-table td{padding:6px 6px;font-size:12px}
+  .ans-btn{padding:4px 8px;font-size:11px}
 }
 </style>
 </head>
 <body>
 <div class="app" id="app">
-  <!-- NAV -->
   <nav class="nav" id="main-nav" style="display:none">
-    <button class="nav-brand" onclick="goHome()">📋 SurveyHub</button>
+    <button class="nav-brand" onclick="goHome()">SurveyHub</button>
     <span class="nav-sep" id="nav-sep" style="display:none">›</span>
     <span class="nav-community-name" id="nav-community-name" style="display:none"></span>
     <div class="nav-links" id="nav-links" style="display:none">
-      <button class="nav-btn" onclick="showPage('surveys')" id="nb-surveys">アンケート一覧</button>
-      <button class="nav-btn" onclick="showPage('create')" id="nb-create">アンケート作成</button>
+      <button class="nav-btn" onclick="showPage('surveys')" id="nb-surveys">一覧</button>
+      <button class="nav-btn" onclick="showPage('create')" id="nb-create">作成</button>
       <button class="nav-btn" onclick="showPage('admin')" id="nb-admin" style="display:none">管理</button>
     </div>
     <div class="nav-right">
@@ -235,7 +208,6 @@ tr:last-child td{border-bottom:none}
   </nav>
 
   <div class="content">
-
     <!-- AUTH -->
     <div class="page active" id="page-auth">
       <div class="auth-wrap">
@@ -257,25 +229,10 @@ tr:last-child td{border-bottom:none}
           </div>
           <p class="form-error" id="auth-error" style="margin-bottom:10px;font-size:13px"></p>
           <button class="btn-primary" id="auth-submit" onclick="handleAuth()">ログイン</button>
-          <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--text-secondary)">
-  <button class="link-btn" onclick="sendPasswordReset()" style="font-size:13px;color:var(--text-secondary)">パスワードを忘れた方はこちら</button>
-</p>
-         
-<p style="text-align:center;margin-top:10px;font-size:13px">
-  <button class="link-btn" onclick="sendPasswordReset()" style="font-size:13px;color:var(--text-secondary)">パスワードを忘れた方はこちら</button>
-</p>
-<p class="toggle-row"><span id="auth-toggle-text">アカウントをお持ちでない方は</span> <button class="link-btn" onclick="toggleAuth()">新規登録</button></p>
-          function sendPasswordReset(){
-  var email = document.getElementById('auth-email').value.trim();
-  var emailErr = document.getElementById('email-error');
-  if(!email){ emailErr.textContent='メールアドレスを入力してください'; emailErr.style.display='block'; return; }
-  if(!validateEmail(email)){ emailErr.textContent='有効なメールアドレスの形式で入力してください'; emailErr.style.display='block'; return; }
-  auth.sendPasswordResetEmail(email).then(function(){
-    alert(email + ' にパスワードリセットメールを送信しました。メールをご確認ください。');
-  }).catch(function(e){
-    alert('送信に失敗しました：' + e.message);
-  });
-}
+          <p style="text-align:center;margin-top:10px;font-size:13px">
+            <button class="link-btn" onclick="sendPasswordReset()" style="font-size:13px;color:var(--text-secondary)">パスワードを忘れた方はこちら</button>
+          </p>
+          <p class="toggle-row"><span id="auth-toggle-text">アカウントをお持ちでない方は</span> <button class="link-btn" onclick="toggleAuth()">新規登録</button></p>
         </div>
       </div>
     </div>
@@ -285,13 +242,12 @@ tr:last-child td{border-bottom:none}
       <p class="page-title" id="ch-username"></p>
       <p class="page-sub">参加しているコミュニティを選択するか、新しく参加・作成してください</p>
       <div id="verify-banner" class="banner banner-info" style="display:none">
-        <i class="ti ti-mail" style="font-size:18px;flex-shrink:0"></i>
-        <span><strong>確認メールを送信しました。</strong><br><span id="verify-email-addr"></span> に届いたリンクをクリックして登録を完了してください。<br><span style="font-size:11px;opacity:.8">※ バックエンド実装後に実際のメールが届くようになります</span></span>
+        <span>確認メールを送信しました。<span id="verify-email-addr"></span> に届いたリンクをクリックして登録を完了してください。</span>
       </div>
       <div class="section-hd">
         <span class="section-title">参加中のコミュニティ</span>
         <div style="display:flex;gap:6px">
-          <button class="btn-sm" onclick="openModal('join-modal')">🔍 検索して参加</button>
+          <button class="btn-sm" onclick="openModal('join-modal')">検索して参加</button>
           <button class="btn-sm" onclick="openModal('create-community-modal')">＋ 新規作成</button>
         </div>
       </div>
@@ -308,7 +264,7 @@ tr:last-child td{border-bottom:none}
     <!-- MY PAGE -->
     <div class="page" id="page-mypage">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-        <div style="width:52px;height:52px;border-radius:50%;background:var(--bg-info);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--text-info)" id="my-big-avatar"></div>
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--bg-info);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--text-info);overflow:hidden" id="my-big-avatar"></div>
         <div>
           <p style="font-size:17px;font-weight:600" id="my-name-label"></p>
           <p style="font-size:13px;color:var(--text-secondary)" id="my-email-label"></p>
@@ -344,8 +300,8 @@ tr:last-child td{border-bottom:none}
         <div class="form-group">
           <label class="form-label">アンケートの種類</label>
           <div class="type-toggle">
-            <button class="type-chip active" id="chip-normal" onclick="setSurveyType('normal')">📝 通常</button>
-            <button class="type-chip" id="chip-date" onclick="setSurveyType('date')">📅 日程回答</button>
+            <button class="type-chip active" id="chip-normal" onclick="setSurveyType('normal')">通常</button>
+            <button class="type-chip" id="chip-date" onclick="setSurveyType('date')">日程回答</button>
           </div>
         </div>
         <div class="form-group"><label class="form-label">タイトル</label><input class="form-input" id="new-survey-title" placeholder="例：6月勉強会 出欠確認"></div>
@@ -353,9 +309,8 @@ tr:last-child td{border-bottom:none}
         <div class="form-group">
           <label class="form-label">締め切り日（任意）</label>
           <input class="form-input" id="new-survey-deadline" type="date" style="max-width:200px">
-          <p class="form-hint">締め切り後も回答可能。未回答者にメール通知が送られます（バックエンド実装後）。</p>
+          <p class="form-hint">締め切り後も回答可能。未回答者にメール通知が送られます。</p>
         </div>
-        <!-- カレンダー -->
         <div id="date-picker-section" style="display:none">
           <label class="form-label" style="margin-bottom:8px">日程をカレンダーで選択（複数選択可）</label>
           <div class="cal-wrap">
@@ -369,7 +324,6 @@ tr:last-child td{border-bottom:none}
           <div id="selected-dates-label" style="font-size:13px;color:var(--text-secondary);margin-bottom:6px">選択中の日程：</div>
           <div class="selected-dates" id="selected-dates-chips"></div>
         </div>
-        <!-- 通常質問 -->
         <div id="normal-questions-section">
           <div class="section-hd" style="margin-top:20px">
             <span class="section-title">質問</span>
@@ -378,7 +332,7 @@ tr:last-child td{border-bottom:none}
           <div id="questions-list"></div>
           <div id="create-empty" style="font-size:14px;color:var(--text-secondary);padding:12px 0">質問を追加してください</div>
         </div>
-        <div id="edit-locked-notice" class="banner banner-warn" style="display:none;margin-top:12px">🔒 回答があるため質問・日程は編集できません。タイトル・説明・締め切りのみ変更可能です。</div>
+        <div id="edit-locked-notice" class="banner banner-warn" style="display:none;margin-top:12px">回答があるため質問・日程は編集できません。タイトル・説明・締め切りのみ変更可能です。</div>
         <button class="btn-primary" id="create-submit-btn" style="max-width:200px;margin-top:14px" onclick="createSurvey()">作成して公開</button>
       </div>
     </div>
@@ -388,7 +342,7 @@ tr:last-child td{border-bottom:none}
       <button class="btn-sm" onclick="goBackFromAnswer()" style="margin-bottom:16px">← 戻る</button>
       <p class="page-title" id="answer-survey-title"></p>
       <p class="page-sub" id="answer-survey-desc"></p>
-      <div id="answer-expired-notice" class="banner banner-warn" style="display:none">⏰ 締め切りを過ぎていますが、引き続き回答できます。</div>
+      <div id="answer-expired-notice" class="banner banner-warn" style="display:none">締め切りを過ぎていますが、引き続き回答できます。</div>
       <div id="answer-questions"></div>
       <button class="btn-primary" style="max-width:200px;margin-top:12px" onclick="submitAnswer()">回答を送信</button>
     </div>
@@ -397,10 +351,9 @@ tr:last-child td{border-bottom:none}
     <div class="page" id="page-admin">
       <p class="page-title">管理画面</p>
       <p class="page-sub" id="admin-sub"></p>
-      <div class="tab-bar" style="max-width:500px">
+      <div class="tab-bar" style="max-width:400px">
         <button class="tab-btn active" onclick="switchAdminTab('members')">メンバー</button>
         <button class="tab-btn" onclick="switchAdminTab('results')">回答状況</button>
-        <button class="tab-btn" onclick="switchAdminTab('export')">CSV出力</button>
       </div>
       <div class="tab-section active" id="admin-tab-members">
         <div class="admin-table-wrap">
@@ -411,28 +364,15 @@ tr:last-child td{border-bottom:none}
         <div style="margin-bottom:12px"><label class="form-label">アンケートを選択</label><select class="form-input" id="results-select" onchange="showResults()" style="max-width:300px"></select></div>
         <div id="results-content"></div>
       </div>
-      <div class="tab-section" id="admin-tab-export">
-        <div class="banner banner-info">📊 CSVをダウンロードしてGoogleスプレッドシートに読み込むと回答データを管理できます。リアルタイム同期はバックエンド（GAS）実装後に対応します。</div>
-        <div style="margin-bottom:12px"><label class="form-label">アンケートを選択</label><select class="form-input" id="export-select" style="max-width:300px"></select></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-green" onclick="downloadCSV()">⬇ CSVをダウンロード</button>
-          <button class="btn-sm" onclick="previewCSV()">👁 プレビュー</button>
-        </div>
-        <div id="csv-preview" style="margin-top:16px;display:none">
-          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">プレビュー</p>
-          <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;font-size:12px;font-family:monospace;overflow-x:auto;white-space:pre" id="csv-preview-content"></div>
-        </div>
-      </div>
     </div>
   </div>
 
   <!-- MODAL: JOIN -->
   <div class="modal-bg" id="join-modal" style="display:none" onclick="if(event.target===this)closeModal('join-modal')">
     <div class="modal">
-      <p class="modal-title">🔍 コミュニティを検索して参加</p>
+      <p class="modal-title">コミュニティを検索して参加</p>
       <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="form-input" id="community-search-input" placeholder="コミュニティ名で検索" oninput="searchCommunities(this.value)" style="padding-left:34px">
+        <input class="form-input" id="community-search-input" placeholder="コミュニティ名で検索" oninput="searchCommunities(this.value)">
       </div>
       <div id="community-search-results"></div>
       <div id="join-pw-section" style="display:none;margin-top:12px">
@@ -447,187 +387,217 @@ tr:last-child td{border-bottom:none}
   <!-- MODAL: CREATE COMMUNITY -->
   <div class="modal-bg" id="create-community-modal" style="display:none" onclick="if(event.target===this)closeModal('create-community-modal')">
     <div class="modal">
-      <p class="modal-title">👥 コミュニティを作成</p>
+      <p class="modal-title">コミュニティを作成</p>
       <div class="form-group"><label class="form-label">コミュニティ名</label><input class="form-input" id="cc-name" placeholder="例：マーケティング部"></div>
       <div class="form-group"><label class="form-label">説明（任意）</label><input class="form-input" id="cc-desc"></div>
       <div class="form-group"><label class="form-label">参加パスワード</label><input class="form-input" id="cc-password" type="password" placeholder="メンバーに共有するパスワード"><p class="form-hint">メンバーはこのパスワードを入力して参加します</p></div>
-      <div class="form-group"><label class="form-label">アイコン</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap" id="icon-picker">
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid var(--green)" onclick="selectIcon(this,'🏢')">🏢</span>
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid transparent" onclick="selectIcon(this,'🎯')">🎯</span>
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid transparent" onclick="selectIcon(this,'💡')">💡</span>
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid transparent" onclick="selectIcon(this,'🚀')">🚀</span>
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid transparent" onclick="selectIcon(this,'🌱')">🌱</span>
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid transparent" onclick="selectIcon(this,'🎓')">🎓</span>
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid transparent" onclick="selectIcon(this,'⚽')">⚽</span>
-          <span style="cursor:pointer;font-size:22px;padding:4px;border-radius:6px;border:2px solid transparent" onclick="selectIcon(this,'🎨')">🎨</span>
+      <div class="form-group">
+        <label class="form-label">アイコン画像</label>
+        <div class="icon-upload-wrap">
+          <div class="icon-preview" id="cc-icon-preview"><span class="icon-preview-placeholder" id="cc-icon-placeholder">?</span></div>
+          <div>
+            <button type="button" class="icon-upload-btn" onclick="document.getElementById('cc-icon-input').click()">写真を選択</button>
+            <p class="form-hint" style="margin-top:6px">JPG・PNG・GIF対応</p>
+          </div>
         </div>
+        <input type="file" id="cc-icon-input" accept="image/*" style="display:none" onchange="previewIcon(this)">
       </div>
       <p class="form-error" id="cc-error"></p>
       <div class="modal-footer"><button class="btn-sm" onclick="closeModal('create-community-modal')">キャンセル</button><button class="btn-primary" style="width:auto;padding:8px 20px" onclick="createCommunity()">作成する</button></div>
     </div>
   </div>
 
-  <!-- MODAL: DELETE -->
-   <!-- MODAL: EDIT COMMUNITY -->
-<div class="modal-bg" id="edit-community-modal" style="display:none" onclick="if(event.target===this)closeModal('edit-community-modal')">
-  <div class="modal">
-    <p class="modal-title">コミュニティを編集</p>
-    <div class="form-group"><label class="form-label">コミュニティ名</label><input class="form-input" id="ec-name" placeholder="コミュニティ名"></div>
-    <div class="form-group"><label class="form-label">説明（任意）</label><input class="form-input" id="ec-desc"></div>
-    <div class="form-group">
-      <label class="form-label">アイコン画像</label>
-      <div class="icon-upload-wrap">
-        <div class="icon-preview" id="ec-icon-preview">
-          <span class="icon-preview-placeholder" id="ec-icon-placeholder">?</span>
+  <!-- MODAL: EDIT COMMUNITY -->
+  <div class="modal-bg" id="edit-community-modal" style="display:none" onclick="if(event.target===this)closeModal('edit-community-modal')">
+    <div class="modal">
+      <p class="modal-title">コミュニティを編集</p>
+      <div class="form-group"><label class="form-label">コミュニティ名</label><input class="form-input" id="ec-name" placeholder="コミュニティ名"></div>
+      <div class="form-group"><label class="form-label">説明（任意）</label><input class="form-input" id="ec-desc"></div>
+      <div class="form-group">
+        <label class="form-label">アイコン画像</label>
+        <div class="icon-upload-wrap">
+          <div class="icon-preview" id="ec-icon-preview"><span class="icon-preview-placeholder">?</span></div>
+          <div>
+            <button type="button" class="icon-upload-btn" onclick="document.getElementById('ec-icon-input').click()">写真を変更</button>
+            <p class="form-hint" style="margin-top:6px">JPG・PNG・GIF対応</p>
+          </div>
         </div>
-        <div>
-          <button type="button" class="icon-upload-btn" onclick="document.getElementById('ec-icon-input').click()">写真を変更</button>
-          <p class="form-hint" style="margin-top:6px">JPG・PNG・GIF対応</p>
-        </div>
+        <input type="file" id="ec-icon-input" accept="image/*" style="display:none" onchange="previewEditIcon(this)">
       </div>
-      <input type="file" id="ec-icon-input" accept="image/*" style="display:none" onchange="previewEditIcon(this)">
-    </div>
-    <p class="form-error" id="ec-error"></p>
-    <div class="modal-footer">
-      <button class="btn-sm" onclick="closeModal('edit-community-modal')">キャンセル</button>
-      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="saveEditCommunity()">保存する</button>
+      <p class="form-error" id="ec-error"></p>
+      <div class="modal-footer"><button class="btn-sm" onclick="closeModal('edit-community-modal')">キャンセル</button><button class="btn-primary" style="width:auto;padding:8px 20px" onclick="saveEditCommunity()">保存する</button></div>
     </div>
   </div>
-</div>
 
-<!-- MODAL: DELETE COMMUNITY -->
-<div class="modal-bg" id="delete-community-modal" style="display:none" onclick="if(event.target===this)closeModal('delete-community-modal')">
-  <div class="modal">
-    <p class="modal-title">コミュニティを削除しますか？</p>
-    <p style="font-size:14px;color:var(--text-secondary)">「<span id="delete-community-name"></span>」を削除します。この操作は取り消せません。</p>
-    <div class="modal-footer">
-      <button class="btn-sm" onclick="closeModal('delete-community-modal')">キャンセル</button>
-      <button class="btn-danger-sm" onclick="confirmDeleteCommunity()">削除する</button>
+  <!-- MODAL: DELETE COMMUNITY -->
+  <div class="modal-bg" id="delete-community-modal" style="display:none" onclick="if(event.target===this)closeModal('delete-community-modal')">
+    <div class="modal">
+      <p class="modal-title">コミュニティを削除しますか？</p>
+      <p style="font-size:14px;color:var(--text-secondary)">「<span id="delete-community-name"></span>」を削除します。この操作は取り消せません。</p>
+      <div class="modal-footer"><button class="btn-sm" onclick="closeModal('delete-community-modal')">キャンセル</button><button class="btn-danger-sm" onclick="confirmDeleteCommunity()">削除する</button></div>
     </div>
   </div>
-</div>
+
+  <!-- MODAL: DELETE SURVEY -->
   <div class="modal-bg" id="delete-modal" style="display:none" onclick="if(event.target===this)closeModal('delete-modal')">
     <div class="modal">
-      <p class="modal-title">⚠️ アンケートを削除しますか？</p>
+      <p class="modal-title">アンケートを削除しますか？</p>
       <p style="font-size:14px;color:var(--text-secondary)">「<span id="delete-survey-name"></span>」を削除します。この操作は取り消せません。</p>
-      <div class="modal-footer"><button class="btn-sm" onclick="closeModal('delete-modal')">キャンセル</button><button class="btn-danger" onclick="confirmDelete()">削除する</button></div>
+      <div class="modal-footer"><button class="btn-sm" onclick="closeModal('delete-modal')">キャンセル</button><button class="btn-danger-sm" onclick="confirmDelete()">削除する</button></div>
     </div>
   </div>
 </div>
 
 <script>
-const today=new Date().toISOString().slice(0,10);
-const DAYS=['日','月','火','水','木','金','土'];
-const DB={
-  users:[
-    {id:1,name:'管理者',email:'admin@example.com',pass:'admin123',joined:'2025-01-10'},
-    {id:2,name:'田中 花子',email:'hanako@example.com',pass:'pass123',joined:'2025-02-15'},
-    {id:3,name:'鈴木 一郎',email:'ichiro@example.com',pass:'pass123',joined:'2025-03-01'},
-  ],
-  communities:[
-    {id:1,name:'開発チーム',desc:'エンジニア向け',icon:'🚀',password:'dev123',createdBy:1,members:[1,2,3]},
-    {id:2,name:'マーケティング部',desc:'マーケ担当者',icon:'🎯',password:'mkt123',createdBy:2,members:[2,3]},
-  ],
-  surveys:[
-    {id:1,communityId:1,type:'normal',title:'社内満足度調査 2025',desc:'職場環境についてお聞かせください',created:'2025-05-01',deadline:'2025-05-31',createdBy:1,
-     questions:[{id:1,text:'職場の満足度は？',type:'radio',options:['とても満足','満足','普通','不満']},{id:2,text:'改善点があれば',type:'text',options:[]}],dates:[]},
-    {id:2,communityId:1,type:'date',title:'6月勉強会 出欠確認',desc:'各日程に出席・欠席・遅刻でお答えください',created:'2025-05-20',deadline:'',createdBy:1,
-     questions:[],dates:['2025-06-10','2025-06-17','2025-06-24']},
-    {id:3,communityId:2,type:'date',title:'懇親会の日程調整',desc:'参加できる日程を選んでください',created:'2025-05-25',deadline:'',createdBy:2,
-     questions:[],dates:['2025-06-12','2025-06-13','2025-06-19','2025-06-20']},
-  ],
-  answers:[
-    {userId:2,surveyId:1,answeredAt:'2025-05-10',responses:{1:'満足',2:'特になし'}},
-    {userId:3,surveyId:2,answeredAt:'2025-05-22',responses:{'2025-06-10':'attend','2025-06-17':'late','2025-06-24':'absent'}},
-  ],
+// ============================================================
+// ★ 設定（自分の値に書き換えてください）
+// ============================================================
+var firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
+var GAS_URL = 'YOUR_GAS_URL';
+var GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
 
-let cu=null,currentCommunityId=null,editingSurveyId=null,deletingSurveyId=null;
-let editingQuestions=[],editingDates=new Set(),currentSurveyType='normal';
-let answerReturnPage='surveys',joinTargetId=null,selectedIcon='🏢';
-let isLogin=true,currentAnswerSurveyId=null;
-let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
-const attState={};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+var storage = firebase.storage();
 
-const isExpired=s=>s.deadline&&s.deadline<today;
-const isAnswered=(uid,sid)=>DB.answers.some(a=>a.userId===uid&&a.surveyId===sid);
-const hasAnswers=sid=>DB.answers.some(a=>a.surveyId===sid);
-const communitySurveys=()=>DB.surveys.filter(s=>s.communityId===currentCommunityId);
-const communityMembers=()=>{const c=DB.communities.find(x=>x.id===currentCommunityId);return c?DB.users.filter(u=>c.members.includes(u.id)):[];};
-const isAdmin=()=>{const c=DB.communities.find(x=>x.id===currentCommunityId);return c&&c.createdBy===cu.id;};
-const validateEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-const fmtDate=d=>{if(!d)return '';const p=d.split('-');return `${p[1]}/${p[2]}(${DAYS[new Date(d).getDay()]})`;};
-const pad=n=>String(n).padStart(2,'0');
-const toYMD=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+var today = new Date().toISOString().slice(0,10);
+var DAYS = ['日','月','火','水','木','金','土'];
+var cu = null, currentCommunityId = null, editingSurveyId = null, deletingSurveyId = null;
+var editingQuestions = [], editingDates = new Set(), currentSurveyType = 'normal';
+var answerReturnPage = 'surveys', joinTargetId = null;
+var communityIconFile = null, communityIconDataUrl = null;
+var editingCommunityId = null, editCommunityIconFile = null, editCommunityIconDataUrl = null;
+var deletingCommunityId = null;
+var isLoginMode = true, currentAnswerSurveyId = null;
+var calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+var googleAccessToken = null;
+var DB = { communities: [], surveys: [], answers: [], userCache: {} };
+var attState = {};
+var ANS_LABEL = {attend:'出席', late:'遅刻', absent:'欠席'};
+var ANS_CHIP = {attend:'chip-attend', late:'chip-late', absent:'chip-absent'};
+
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    db.collection('users').doc(user.uid).get().then(function(docSnap) {
+      if (docSnap.exists) {
+        cu = docSnap.data(); cu.id = user.uid;
+        DB.userCache[user.uid] = cu;
+        document.getElementById('main-nav').style.display = 'flex';
+        document.getElementById('nav-name').textContent = cu.name;
+        updateNavAvatar(cu);
+        showCommunityHome(false);
+      }
+    });
+  }
+});
+
+function updateNavAvatar(user) {
+  var el = document.getElementById('nav-avatar');
+  if(user && user.iconUrl) el.innerHTML = '<img src="'+user.iconUrl+'" alt="avatar">';
+  else el.textContent = user ? user.name[0] : '?';
+}
+
+function isExpired(s){ return s.deadline && s.deadline < today; }
+function isAnswered(uid,sid){ return DB.answers.some(function(a){ return a.userId===uid && a.surveyId===sid; }); }
+function hasAnswers(sid){ return DB.answers.some(function(a){ return a.surveyId===sid; }); }
+function communitySurveys(){ return DB.surveys.filter(function(s){ return s.communityId===currentCommunityId; }); }
+function validateEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+function fmtDate(d){ if(!d) return ''; var p=d.split('-'); return p[1]+'/'+p[2]+'('+DAYS[new Date(d).getDay()]+')'; }
+function pad(n){ return String(n).padStart(2,'0'); }
+function toYMD(y,m,d){ return y+'-'+pad(m+1)+'-'+pad(d); }
+function typeBadge(t){ return t==='date'?'<span class="badge badge-date">日程回答</span>':''; }
 
 function setNavLinks(show){
-  document.getElementById('nav-links').style.display=show?'flex':'none';
-  document.getElementById('nav-sep').style.display=show?'inline':'none';
-  document.getElementById('nav-community-name').style.display=show?'inline':'none';
+  document.getElementById('nav-links').style.display = show?'flex':'none';
+  document.getElementById('nav-sep').style.display = show?'inline':'none';
+  document.getElementById('nav-community-name').style.display = show?'inline':'none';
 }
 
 function handleAuth(){
-  const email=document.getElementById('auth-email').value.trim();
-  const pass=document.getElementById('auth-pass').value.trim();
-  const errEl=document.getElementById('auth-error'),emailErr=document.getElementById('email-error');
-  errEl.style.display='none';emailErr.style.display='none';errEl.textContent='';emailErr.textContent='';
-  if(!email){emailErr.textContent='メールアドレスを入力してください';emailErr.style.display='block';return;}
-  if(!validateEmail(email)){emailErr.textContent='有効なメールアドレスの形式で入力してください';emailErr.style.display='block';return;}
-  if(isLogin){
-    const user=DB.users.find(u=>u.email===email&&u.pass===pass);
-    if(!user){errEl.textContent='メールアドレスまたはパスワードが違います';errEl.style.display='block';return;}
-    login(user,false);
+  var email = document.getElementById('auth-email').value.trim();
+  var pass = document.getElementById('auth-pass').value.trim();
+  var errEl = document.getElementById('auth-error'), emailErr = document.getElementById('email-error');
+  errEl.style.display='none'; emailErr.style.display='none'; errEl.textContent=''; emailErr.textContent='';
+  if(!email){ emailErr.textContent='メールアドレスを入力してください'; emailErr.style.display='block'; return; }
+  if(!validateEmail(email)){ emailErr.textContent='有効なメールアドレスの形式で入力してください'; emailErr.style.display='block'; return; }
+  if(isLoginMode){
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(function(cred){
+        return db.collection('users').doc(cred.user.uid).get().then(function(docSnap){
+          cu = docSnap.data(); cu.id = cred.user.uid; DB.userCache[cu.id] = cu;
+          document.getElementById('main-nav').style.display='flex';
+          document.getElementById('nav-name').textContent=cu.name;
+          updateNavAvatar(cu); showCommunityHome(false);
+        });
+      }).catch(function(){ errEl.textContent='メールアドレスまたはパスワードが違います'; errEl.style.display='block'; });
   } else {
-    const name=document.getElementById('reg-name').value.trim();
-    if(!name){errEl.textContent='名前を入力してください';errEl.style.display='block';return;}
-    if(DB.users.find(u=>u.email===email)){errEl.textContent='このメールアドレスは既に登録されています';errEl.style.display='block';return;}
-    const newUser={id:DB.users.length+1,name,email,pass,joined:today};
-    DB.users.push(newUser);login(newUser,true);
+    var name = document.getElementById('reg-name').value.trim();
+    if(!name){ errEl.textContent='名前を入力してください'; errEl.style.display='block'; return; }
+    auth.createUserWithEmailAndPassword(email, pass)
+      .then(function(cred){
+        return db.collection('users').doc(cred.user.uid).set({name:name,email:email,joined:today,role:'user',iconUrl:''}).then(function(){
+          cu = {id:cred.user.uid,name:name,email:email,joined:today,iconUrl:''}; DB.userCache[cu.id]=cu;
+          document.getElementById('main-nav').style.display='flex';
+          document.getElementById('nav-name').textContent=cu.name;
+          updateNavAvatar(cu); showCommunityHome(true);
+        });
+      }).catch(function(e){ errEl.textContent='登録に失敗しました：'+e.message; errEl.style.display='block'; });
   }
 }
 
 function toggleAuth(){
-  isLogin=!isLogin;
-  document.getElementById('auth-title').textContent=isLogin?'ログイン':'新規登録';
-  document.getElementById('auth-sub').textContent=isLogin?'メールアドレスとパスワードでログイン':'名前とメールアドレスで登録';
-  document.getElementById('auth-submit').textContent=isLogin?'ログイン':'登録する';
-  document.getElementById('auth-toggle-text').textContent=isLogin?'アカウントをお持ちでない方は':'すでにアカウントをお持ちの方は';
-  document.getElementById('reg-name-group').style.display=isLogin?'none':'block';
+  isLoginMode = !isLoginMode;
+  document.getElementById('auth-title').textContent = isLoginMode?'ログイン':'新規登録';
+  document.getElementById('auth-sub').textContent = isLoginMode?'メールアドレスとパスワードでログイン':'名前とメールアドレスで登録';
+  document.getElementById('auth-submit').textContent = isLoginMode?'ログイン':'登録する';
+  document.getElementById('auth-toggle-text').textContent = isLoginMode?'アカウントをお持ちでない方は':'すでにアカウントをお持ちの方は';
+  document.getElementById('reg-name-group').style.display = isLoginMode?'none':'block';
   document.getElementById('auth-error').style.display='none';
   document.getElementById('email-error').style.display='none';
 }
 
-function login(user,isNew){
-  cu=user;
-  document.getElementById('main-nav').style.display='flex';
-  document.getElementById('nav-name').textContent=user.name;
-  document.getElementById('nav-avatar').textContent=user.name[0];
-  showCommunityHome(isNew);
+function sendPasswordReset(){
+  var email = document.getElementById('auth-email').value.trim();
+  var emailErr = document.getElementById('email-error');
+  if(!email){ emailErr.textContent='メールアドレスを入力してください'; emailErr.style.display='block'; return; }
+  if(!validateEmail(email)){ emailErr.textContent='有効なメールアドレスの形式で入力してください'; emailErr.style.display='block'; return; }
+  auth.sendPasswordResetEmail(email).then(function(){
+    alert(email+' にパスワードリセットメールを送信しました。');
+  }).catch(function(e){ alert('送信に失敗しました：'+e.message); });
 }
 
 function logout(){
-  cu=null;currentCommunityId=null;
-  document.getElementById('main-nav').style.display='none';setNavLinks(false);
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-auth').classList.add('active');
-  isLogin=true;document.getElementById('reg-name-group').style.display='none';
-  document.getElementById('auth-title').textContent='ログイン';document.getElementById('auth-submit').textContent='ログイン';
+  auth.signOut().then(function(){
+    cu=null; currentCommunityId=null;
+    document.getElementById('main-nav').style.display='none'; setNavLinks(false);
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('page-auth').classList.add('active');
+    isLoginMode=true; document.getElementById('reg-name-group').style.display='none';
+    document.getElementById('auth-title').textContent='ログイン';
+    document.getElementById('auth-submit').textContent='ログイン';
+  });
 }
 
 function showCommunityHome(isNew){
-  currentCommunityId=null;setNavLinks(false);document.getElementById('nb-admin').style.display='none';
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  currentCommunityId=null; setNavLinks(false); document.getElementById('nb-admin').style.display='none';
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-community-home').classList.add('active');
-  document.getElementById('ch-username').textContent=`${cu.name}さん、こんにちは`;
-  const banner=document.getElementById('verify-banner');
-  if(isNew){document.getElementById('verify-email-addr').textContent=cu.email;banner.style.display='flex';}
+  document.getElementById('ch-username').textContent = cu.name+'さん、こんにちは';
+  var banner = document.getElementById('verify-banner');
+  if(isNew){ document.getElementById('verify-email-addr').textContent=cu.email; banner.style.display='flex'; }
   else banner.style.display='none';
   renderMyCommunities();
 }
 
-function goHome(){showCommunityHome(false);}
-
+function goHome(){ showCommunityHome(false); }
 
 function renderMyCommunities(){
   var grid = document.getElementById('my-community-grid');
@@ -641,170 +611,156 @@ function renderMyCommunities(){
       var iconHtml = c.iconUrl
         ? '<img src="'+c.iconUrl+'" alt="icon">'
         : '<span style="font-size:22px;color:var(--text-secondary)">'+c.name[0]+'</span>';
-     return '<div style="position:relative">'
+      return '<div>'
         +'<div class="community-card" onclick="enterCommunity(\''+c.id+'\')">'
         +'<div class="community-icon">'+iconHtml+'</div>'
         +'<p class="community-name">'+c.name+'</p>'
         +'<p class="community-meta">'+c.desc+'</p>'
         +role
         +'</div>'
-        +'<div style="display:flex;gap:6px;margin-top:6px">'
+        +'<div class="community-btn-row">'
         +'<button class="btn-sm" style="flex:1;font-size:12px" onclick="openEditCommunityModal(\''+c.id+'\')">編集</button>'
         +'<button class="btn-danger-sm" style="flex:1;font-size:12px" onclick="openDeleteCommunityModal(\''+c.id+'\')">削除</button>'
         +'</div>'
-        +'</div>'; 
+        +'</div>';
     }).join('');
   });
 }
-  const mine=DB.communities.filter(c=>c.members.includes(cu.id));
-  const grid=document.getElementById('my-community-grid');
-  if(!mine.length){grid.innerHTML='<p style="font-size:14px;color:var(--text-secondary);grid-column:1/-1">まだコミュニティに参加していません</p>';return;}
-  grid.innerHTML=mine.map(c=>{
-    const role=c.createdBy===cu.id?'<span class="community-role role-admin">管理者</span>':'<span class="community-role role-member">メンバー</span>';
-    return `<div class="community-card" onclick="enterCommunity(${c.id})"><div class="community-icon">${c.icon}</div><p class="community-name">${c.name}</p><p class="community-meta">${DB.surveys.filter(s=>s.communityId===c.id).length}件のアンケート</p>${role}</div>`;
-  }).join('');
-}
 
 function enterCommunity(id){
-  currentCommunityId=id;
-  const c=DB.communities.find(x=>x.id===id);
-  document.getElementById('nav-community-name').textContent=c.name;
-  setNavLinks(true);document.getElementById('nb-admin').style.display=isAdmin()?'block':'none';
-  showPage('surveys');
+  currentCommunityId = id;
+  var c = DB.communities.find(function(x){ return x.id===id; });
+  document.getElementById('nav-community-name').textContent = c.name;
+  setNavLinks(true);
+  document.getElementById('nb-admin').style.display = (c.createdBy===cu.id)?'block':'none';
+  db.collection('surveys').where('communityId','==',id).get().then(function(snap){
+    DB.surveys = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+    showPage('surveys');
+  });
 }
 
 function showPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-'+id).classList.add('active');
-  ['surveys','create'].forEach(n=>{const b=document.getElementById('nb-'+n);if(b)b.classList.toggle('active',n===id);});
+  ['surveys','create'].forEach(function(n){ var b=document.getElementById('nb-'+n); if(b) b.classList.toggle('active',n===id); });
   if(id==='surveys') renderSurveys();
   if(id==='mypage') renderMyPage();
   if(id==='create') openCreate(null);
   if(id==='admin') renderAdmin();
 }
 
-function typeBadge(t){return t==='date'?'<span class="badge badge-date">📅 日程回答</span>':'';}
-
 function renderSurveys(){
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
-  document.getElementById('surveys-sub').textContent=c?`${c.name}のアンケート一覧`:'';
-  document.getElementById('all-survey-list').innerHTML=communitySurveys().map(s=>surveyCardHTML(s)).join('');
+  var c = DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  document.getElementById('surveys-sub').textContent = c?c.name+'のアンケート一覧':'';
+  document.getElementById('all-survey-list').innerHTML = communitySurveys().map(surveyCardHTML).join('');
 }
 
 function surveyCardHTML(s){
-  const answered=isAnswered(cu.id,s.id),expired=isExpired(s),owner=s.createdBy===cu.id;
-  const creator=DB.users.find(u=>u.id===s.createdBy);
-  let badges=typeBadge(s.type)+' ';
+  var answered=isAnswered(cu.id,s.id), expired=isExpired(s), owner=s.createdBy===cu.id;
+  var creator = DB.userCache[s.createdBy]?DB.userCache[s.createdBy].name:'不明';
+  var badges = typeBadge(s.type)+' ';
   if(answered) badges+='<span class="badge badge-answered">回答済み</span> ';
-  if(expired)  badges+='<span class="badge badge-expired">締め切り済み</span> ';
+  if(expired) badges+='<span class="badge badge-expired">締め切り済み</span> ';
   else if(!answered) badges+='<span class="badge badge-pending">未回答</span> ';
-  const dl=s.deadline?`締め切り：${s.deadline} ・ `:'';
-  const info=s.type==='date'?`${s.dates.length}日程`:`${s.questions.length}問`;
-  let acts='';
-  if(!answered) acts+=`<button class="btn-sm" onclick="openAnswer(${s.id},'surveys')">回答する</button>`;
-  if(owner){
-    acts+=` <button class="btn-sm" onclick="openEdit(${s.id})">✏️</button>`;
-    acts+=` <button class="btn-danger" onclick="openDeleteModal(${s.id})">🗑</button>`;
-  }
-  return `<div class="survey-card"><div class="survey-row">${badges}<div class="survey-info"><p class="survey-name">${s.title}</p><p class="survey-meta">${dl}${info} ・ 作成：${creator?creator.name:'不明'}</p></div><div class="survey-actions">${acts}</div></div></div>`;
+  var dl=s.deadline?'締め切り：'+s.deadline+' ・ ':'';
+  var info=s.type==='date'?(s.dates||[]).length+'日程':(s.questions||[]).length+'問';
+  var acts='';
+  if(!answered) acts+='<button class="btn-sm" onclick="openAnswer(\''+s.id+'\',\'surveys\')">回答する</button>';
+  if(owner){ acts+=' <button class="btn-sm" onclick="openEdit(\''+s.id+'\')">編集</button>'; acts+=' <button class="btn-danger-sm" onclick="openDeleteModal(\''+s.id+'\')">削除</button>'; }
+  return '<div class="survey-card"><div class="survey-row">'+badges+'<div class="survey-info"><p class="survey-name">'+s.title+'</p><p class="survey-meta">'+dl+info+' ・ 作成：'+creator+'</p></div><div class="survey-actions">'+acts+'</div></div></div>';
 }
 
 function renderMyPage(){
-  if(!cu)return;
-  document.getElementById('my-big-avatar').textContent=cu.name[0];
+  if(!cu) return;
+  var avatarEl = document.getElementById('my-big-avatar');
+  if(cu.iconUrl) avatarEl.innerHTML='<img src="'+cu.iconUrl+'" style="width:100%;height:100%;object-fit:cover">';
+  else avatarEl.textContent=cu.name[0];
   document.getElementById('my-name-label').textContent=cu.name;
   document.getElementById('my-email-label').textContent=cu.email;
-  const surveys=currentCommunityId?communitySurveys():DB.surveys;
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
+  var surveys=communitySurveys();
+  var c=DB.communities.find(function(x){ return x.id===currentCommunityId; });
   document.getElementById('my-community-label').textContent=c?c.name:'';
-  const answered=surveys.filter(s=>isAnswered(cu.id,s.id)).length;
-  const pct=surveys.length?Math.round(answered/surveys.length*100):0;
-  document.getElementById('my-pct').textContent=pct;
-  document.getElementById('my-bar').style.width=pct+'%';
-  document.getElementById('my-bar-left').textContent=`回答済み ${answered}件`;
-  document.getElementById('my-bar-right').textContent=`全 ${surveys.length}件`;
-  document.getElementById('my-answered-count').textContent=answered;
-  document.getElementById('my-pending-count').textContent=surveys.length-answered;
-  document.getElementById('my-answered-list').innerHTML=surveys.filter(s=>isAnswered(cu.id,s.id)).map(s=>`<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} <span class="badge badge-answered">回答済み</span><div class="survey-info"><p class="survey-name">${s.title}</p></div></div></div>`).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだ回答したアンケートはありません</p>';
-  document.getElementById('my-pending-list').innerHTML=surveys.filter(s=>!isAnswered(cu.id,s.id)).map(s=>{
-    const exp=isExpired(s);
-    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} ${exp?'<span class="badge badge-expired">締め切り済み</span>':'<span class="badge badge-pending">未回答</span>'}<div class="survey-info"><p class="survey-name">${s.title}</p>${exp?'<div class="banner banner-warn" style="margin-top:8px;padding:8px 12px">📧 締め切り通知メール送信済み（バックエンド実装後）</div>':''}</div><div class="survey-actions"><button class="btn-sm" onclick="openAnswer('+s.id+',\'mypage\')">回答する</button></div></div></div>`;
-  }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">未回答のアンケートはありません 🎉</p>';
-  document.getElementById('my-created-list').innerHTML=surveys.filter(s=>s.createdBy===cu.id).map(s=>{
-    const cnt=DB.answers.filter(a=>a.surveyId===s.id).length;
-    return `<div class="survey-card"><div class="survey-row">${typeBadge(s.type)} <span class="badge badge-mine">作成</span><div class="survey-info"><p class="survey-name">${s.title}</p><p class="survey-meta">回答数：${cnt}件${s.deadline?' ・ 締め切り：'+s.deadline:''}</p></div><div class="survey-actions"><button class="btn-sm" onclick="openEdit(${s.id})">✏️</button><button class="btn-danger" onclick="openDeleteModal(${s.id})">🗑</button></div></div></div>`;
-  }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだアンケートを作成していません</p>';
+  db.collection('answers').where('userId','==',cu.id).get().then(function(ansSnap){
+    DB.answers=ansSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+    var answered=surveys.filter(function(s){ return isAnswered(cu.id,s.id); }).length;
+    var pct=surveys.length?Math.round(answered/surveys.length*100):0;
+    document.getElementById('my-pct').textContent=pct;
+    document.getElementById('my-bar').style.width=pct+'%';
+    document.getElementById('my-bar-left').textContent='回答済み '+answered+'件';
+    document.getElementById('my-bar-right').textContent='全 '+surveys.length+'件';
+    document.getElementById('my-answered-count').textContent=answered;
+    document.getElementById('my-pending-count').textContent=surveys.length-answered;
+    document.getElementById('my-answered-list').innerHTML=surveys.filter(function(s){ return isAnswered(cu.id,s.id); }).map(function(s){
+      return '<div class="survey-card"><div class="survey-row">'+typeBadge(s.type)+' <span class="badge badge-answered">回答済み</span><div class="survey-info"><p class="survey-name">'+s.title+'</p></div></div></div>';
+    }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだ回答したアンケートはありません</p>';
+    document.getElementById('my-pending-list').innerHTML=surveys.filter(function(s){ return !isAnswered(cu.id,s.id); }).map(function(s){
+      var exp=isExpired(s);
+      return '<div class="survey-card"><div class="survey-row">'+typeBadge(s.type)+' '+(exp?'<span class="badge badge-expired">締め切り済み</span>':'<span class="badge badge-pending">未回答</span>')+'<div class="survey-info"><p class="survey-name">'+s.title+'</p></div><div class="survey-actions"><button class="btn-sm" onclick="openAnswer(\''+s.id+'\',\'mypage\')">回答する</button></div></div></div>';
+    }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">未回答のアンケートはありません</p>';
+    document.getElementById('my-created-list').innerHTML=surveys.filter(function(s){ return s.createdBy===cu.id; }).map(function(s){
+      return '<div class="survey-card"><div class="survey-row">'+typeBadge(s.type)+' <span class="badge badge-mine">作成</span><div class="survey-info"><p class="survey-name">'+s.title+'</p></div><div class="survey-actions"><button class="btn-sm" onclick="openEdit(\''+s.id+'\')">編集</button><button class="btn-danger-sm" onclick="openDeleteModal(\''+s.id+'\')">削除</button></div></div></div>';
+    }).join('')||'<p style="font-size:14px;color:var(--text-secondary)">まだアンケートを作成していません</p>';
+  });
 }
 
 function switchMyTab(tab){
-  document.querySelectorAll('#page-mypage .tab-btn').forEach((b,i)=>b.classList.toggle('active',['answered','pending','created'][i]===tab));
-  document.querySelectorAll('#page-mypage .tab-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('#page-mypage .tab-btn').forEach(function(b,i){ b.classList.toggle('active',['answered','pending','created'][i]===tab); });
+  document.querySelectorAll('#page-mypage .tab-section').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById('my-tab-'+tab).classList.add('active');
 }
 
-/* Calendar */
 function renderCalendar(){
-  const label=document.getElementById('cal-month-label');
-  if(!label)return;
-  label.textContent=`${calYear}年${calMonth+1}月`;
-  const grid=document.getElementById('cal-grid');
-  let html=DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  const first=new Date(calYear,calMonth,1).getDay();
-  const last=new Date(calYear,calMonth+1,0).getDate();
-  const prevLast=new Date(calYear,calMonth,0).getDate();
-  for(let i=0;i<first;i++) html+=`<button class="cal-day other-month" disabled>${prevLast-first+1+i}</button>`;
-  for(let d=1;d<=last;d++){
-    const ymd=toYMD(calYear,calMonth,d);
-    const dow=new Date(calYear,calMonth,d).getDay();
-    const sel=editingDates.has(ymd);
-    let cls='cal-day';
-    if(dow===0) cls+=' sun';
-    if(dow===6) cls+=' sat';
-    if(sel) cls+=' selected';
-    if(ymd===today) cls+=' today-mark';
-    html+=`<button class="${cls}" onclick="toggleCalDay('${ymd}')">${d}</button>`;
+  var label=document.getElementById('cal-month-label'); if(!label) return;
+  label.textContent=calYear+'年'+(calMonth+1)+'月';
+  var grid=document.getElementById('cal-grid');
+  var html=DAYS.map(function(d){ return '<div class="cal-dow">'+d+'</div>'; }).join('');
+  var first=new Date(calYear,calMonth,1).getDay(), last=new Date(calYear,calMonth+1,0).getDate(), prevLast=new Date(calYear,calMonth,0).getDate();
+  for(var i=0;i<first;i++) html+='<button class="cal-day other-month" disabled>'+(prevLast-first+1+i)+'</button>';
+  for(var d=1;d<=last;d++){
+    var ymd=toYMD(calYear,calMonth,d), dow=new Date(calYear,calMonth,d).getDay();
+    var cls='cal-day'; if(dow===0) cls+=' sun'; if(dow===6) cls+=' sat';
+    if(editingDates.has(ymd)) cls+=' selected'; if(ymd===today) cls+=' today-mark';
+    html+='<button class="'+cls+'" onclick="toggleCalDay(\''+ymd+'\')">'+d+'</button>';
   }
-  const rem=(7-((first+last)%7))%7;
-  for(let d=1;d<=rem;d++) html+=`<button class="cal-day other-month" disabled>${d}</button>`;
-  grid.innerHTML=html;
-  renderSelectedChips();
+  var rem=(7-((first+last)%7))%7;
+  for(var d2=1;d2<=rem;d2++) html+='<button class="cal-day other-month" disabled>'+d2+'</button>';
+  grid.innerHTML=html; renderSelectedChips();
 }
-function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
-function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
-function toggleCalDay(ymd){editingDates.has(ymd)?editingDates.delete(ymd):editingDates.add(ymd);renderCalendar();}
+function calPrev(){ calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderCalendar(); }
+function calNext(){ calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderCalendar(); }
+function toggleCalDay(ymd){ editingDates.has(ymd)?editingDates.delete(ymd):editingDates.add(ymd); renderCalendar(); }
 function renderSelectedChips(){
-  const sorted=[...editingDates].sort();
-  const lbl=document.getElementById('selected-dates-label');
-  const chips=document.getElementById('selected-dates-chips');
-  if(!lbl||!chips)return;
-  lbl.textContent=`選択中の日程：${sorted.length}件`;
-  chips.innerHTML=sorted.map(d=>`<div class="date-chip">${fmtDate(d)}<button onclick="removeCalDay('${d}')">×</button></div>`).join('');
+  var sorted=Array.from(editingDates).sort();
+  var lbl=document.getElementById('selected-dates-label'), chips=document.getElementById('selected-dates-chips');
+  if(!lbl||!chips) return;
+  lbl.textContent='選択中の日程：'+sorted.length+'件';
+  chips.innerHTML=sorted.map(function(d){ return '<div class="date-chip">'+fmtDate(d)+'<button onclick="removeCalDay(\''+d+'\')">×</button></div>'; }).join('');
 }
-function removeCalDay(ymd){editingDates.delete(ymd);renderCalendar();}
+function removeCalDay(ymd){ editingDates.delete(ymd); renderCalendar(); }
 
-/* Create */
 function setSurveyType(t){
   currentSurveyType=t;
-  ['normal','date'].forEach(x=>document.getElementById('chip-'+x).classList.toggle('active',x===t));
+  ['normal','date'].forEach(function(x){ document.getElementById('chip-'+x).classList.toggle('active',x===t); });
   document.getElementById('date-picker-section').style.display=t==='date'?'block':'none';
   document.getElementById('normal-questions-section').style.display=t==='normal'?'block':'none';
 }
+
 function openCreate(sid){
-  editingSurveyId=sid;editingDates=new Set();editingQuestions=[];
-  const locked=sid?hasAnswers(sid):false;
+  editingSurveyId=sid; editingDates=new Set(); editingQuestions=[];
+  var locked=sid?hasAnswers(sid):false;
   document.getElementById('create-page-title').textContent=sid?'アンケートを編集':'アンケートを作成';
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
-  document.getElementById('create-page-sub').textContent=c?`コミュニティ：${c.name}`:'';
+  var c=DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  document.getElementById('create-page-sub').textContent=c?'コミュニティ：'+c.name:'';
   document.getElementById('create-submit-btn').textContent=sid?'変更を保存':'作成して公開';
   document.getElementById('edit-locked-notice').style.display=locked?'flex':'none';
   document.getElementById('add-q-btn').style.display=locked?'none':'inline-block';
   if(sid){
-    const s=DB.surveys.find(x=>x.id===sid);
+    var s=DB.surveys.find(function(x){ return x.id===sid; });
     document.getElementById('new-survey-title').value=s.title;
     document.getElementById('new-survey-desc').value=s.desc;
     document.getElementById('new-survey-deadline').value=s.deadline||'';
     currentSurveyType=s.type;
-    if(!locked){editingDates=new Set(s.dates);editingQuestions=s.questions.map(q=>({...q,options:[...q.options]}));}
+    if(!locked){ editingDates=new Set(s.dates||[]); editingQuestions=(s.questions||[]).map(function(q){ return Object.assign({},q,{options:(q.options||[]).slice()}); }); }
   } else {
     document.getElementById('new-survey-title').value='';
     document.getElementById('new-survey-desc').value='';
@@ -812,335 +768,265 @@ function openCreate(sid){
     currentSurveyType='normal';
   }
   setSurveyType(currentSurveyType);
-  calYear=new Date().getFullYear();calMonth=new Date().getMonth();
-  renderCalendar();renderQBuilder(locked,sid);
+  calYear=new Date().getFullYear(); calMonth=new Date().getMonth();
+  renderCalendar(); renderQBuilder(locked,sid);
 }
+
 function openEdit(sid){
-  const s=DB.surveys.find(x=>x.id===sid);
-  if(s.createdBy!==cu.id){alert('編集権限がありません');return;}
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  var s=DB.surveys.find(function(x){ return x.id===sid; });
+  if(s.createdBy!==cu.id){ alert('編集権限がありません'); return; }
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-create').classList.add('active');
   openCreate(sid);
 }
-function addQuestion(){editingQuestions.push({id:Date.now(),text:'',type:'radio',options:['選択肢1','選択肢2']});renderQBuilder(false,editingSurveyId);}
+
+function addQuestion(){ editingQuestions.push({id:Date.now(),text:'',type:'radio',options:['選択肢1','選択肢2']}); renderQBuilder(false,editingSurveyId); }
+
 function renderQBuilder(locked,sid){
-  const el=document.getElementById('questions-list'),empty=document.getElementById('create-empty');
+  var el=document.getElementById('questions-list'), empty=document.getElementById('create-empty');
   if(locked&&sid){
-    const s=DB.surveys.find(x=>x.id===sid);empty.style.display='none';
-    el.innerHTML=(s.type==='normal'?s.questions.map((q,i)=>`<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;margin-bottom:8px;opacity:.7"><p style="font-size:12px;color:var(--text-secondary)">質問 ${i+1}（編集不可）</p><p style="font-size:14px;font-weight:500">${q.text}</p></div>`):s.dates.map(d=>`<div class="date-chip" style="opacity:.7">${fmtDate(d)}（編集不可）</div>`)).join('');
+    var s=DB.surveys.find(function(x){ return x.id===sid; }); empty.style.display='none';
+    el.innerHTML=(s.type==='normal'?(s.questions||[]).map(function(q,i){ return '<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;margin-bottom:8px;opacity:.7"><p style="font-size:12px;color:var(--text-secondary)">質問 '+(i+1)+'（編集不可）</p><p style="font-size:14px;font-weight:500">'+q.text+'</p></div>'; }):(s.dates||[]).map(function(d){ return '<div class="date-chip" style="opacity:.7">'+fmtDate(d)+'（編集不可）</div>'; })).join('');
     return;
   }
   empty.style.display=editingQuestions.length?'none':'block';
-  el.innerHTML=editingQuestions.map((q,i)=>`
-    <div class="q-builder-item">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-        <span style="font-size:12px;color:var(--text-secondary);flex-shrink:0">質問 ${i+1}</span>
-        <input class="form-input" value="${q.text}" placeholder="質問文を入力" oninput="editingQuestions[${i}].text=this.value" style="flex:1">
-        <button class="btn-danger" onclick="editingQuestions.splice(${i},1);renderQBuilder(false,editingSurveyId)">🗑</button>
-      </div>
-      <select class="form-input" onchange="editingQuestions[${i}].type=this.value;renderQBuilder(false,editingSurveyId)" style="max-width:160px;margin-bottom:10px">
-        <option value="radio" ${q.type==='radio'?'selected':''}>選択肢（単一）</option>
-        <option value="text" ${q.type==='text'?'selected':''}>自由記述</option>
-      </select>
-      ${q.type==='radio'?`<div style="display:flex;flex-direction:column;gap:6px">
-        ${q.options.map((o,j)=>`<div style="display:flex;gap:6px;align-items:center"><input class="form-input" value="${o}" oninput="editingQuestions[${i}].options[${j}]=this.value" style="flex:1">${q.options.length>2?`<button class="btn-sm" onclick="editingQuestions[${i}].options.splice(${j},1);renderQBuilder(false,editingSurveyId)">×</button>`:''}</div>`).join('')}
-        <button class="btn-sm" onclick="editingQuestions[${i}].options.push('新しい選択肢');renderQBuilder(false,editingSurveyId)" style="align-self:flex-start;margin-top:4px">＋ 選択肢を追加</button>
-      </div>`:'<p style="font-size:13px;color:var(--text-secondary)">自由記述のテキストボックスが表示されます</p>'}
-    </div>`).join('');
+  el.innerHTML=editingQuestions.map(function(q,i){
+    return '<div class="q-builder-item"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><span style="font-size:12px;color:var(--text-secondary);flex-shrink:0">質問 '+(i+1)+'</span><input class="form-input" value="'+q.text+'" placeholder="質問文を入力" oninput="editingQuestions['+i+'].text=this.value" style="flex:1"><button class="btn-danger-sm" onclick="editingQuestions.splice('+i+',1);renderQBuilder(false,editingSurveyId)">削除</button></div>'
+      +'<select class="form-input" onchange="editingQuestions['+i+'].type=this.value;renderQBuilder(false,editingSurveyId)" style="max-width:160px;margin-bottom:10px"><option value="radio" '+(q.type==='radio'?'selected':'')+'>選択肢（単一）</option><option value="text" '+(q.type==='text'?'selected':'')+'>自由記述</option></select>'
+      +(q.type==='radio'?'<div style="display:flex;flex-direction:column;gap:6px">'+q.options.map(function(o,j){ return '<div style="display:flex;gap:6px;align-items:center"><input class="form-input" value="'+o+'" oninput="editingQuestions['+i+'].options['+j+']=this.value" style="flex:1">'+(q.options.length>2?'<button class="btn-sm" onclick="editingQuestions['+i+'].options.splice('+j+',1);renderQBuilder(false,editingSurveyId)">×</button>':'')+'</div>'; }).join('')+'<button class="btn-sm" onclick="editingQuestions['+i+'].options.push(\'新しい選択肢\');renderQBuilder(false,editingSurveyId)" style="align-self:flex-start;margin-top:4px">＋ 選択肢を追加</button></div>':'<p style="font-size:13px;color:var(--text-secondary)">自由記述のテキストボックスが表示されます</p>')
+      +'</div>';
+  }).join('');
 }
+
 function createSurvey(){
-  const title=document.getElementById('new-survey-title').value.trim();
-  const desc=document.getElementById('new-survey-desc').value.trim();
-  const deadline=document.getElementById('new-survey-deadline').value;
-  if(!title){alert('タイトルを入力してください');return;}
-  const t=currentSurveyType;
+  var title=document.getElementById('new-survey-title').value.trim();
+  var desc=document.getElementById('new-survey-desc').value.trim();
+  var deadline=document.getElementById('new-survey-deadline').value;
+  if(!title){ alert('タイトルを入力してください'); return; }
+  var t=currentSurveyType;
   if(editingSurveyId){
-    const s=DB.surveys.find(x=>x.id===editingSurveyId);
-    const locked=hasAnswers(editingSurveyId);
-    s.title=title;s.desc=desc;s.deadline=deadline;
-    if(!locked){s.dates=[...editingDates].sort();s.questions=editingQuestions.map((q,i)=>({id:i+1,...q,options:[...q.options]}));}
-    editingSurveyId=null;showPage('surveys');
+    var s=DB.surveys.find(function(x){ return x.id===editingSurveyId; });
+    var locked=hasAnswers(editingSurveyId);
+    s.title=title; s.desc=desc; s.deadline=deadline;
+    var updateData={title:title,desc:desc,deadline:deadline};
+    if(!locked){ s.dates=Array.from(editingDates).sort(); s.questions=editingQuestions.map(function(q,i){ return Object.assign({id:i+1},q,{options:q.options.slice()}); }); updateData.dates=s.dates; updateData.questions=s.questions; }
+    db.collection('surveys').doc(editingSurveyId).update(updateData).then(function(){ editingSurveyId=null; showPage('surveys'); });
   } else {
-    if(t==='normal'&&!editingQuestions.length){alert('質問を追加してください');return;}
-    if(t==='date'&&editingDates.size===0){alert('日程を1つ以上選択してください');return;}
-    DB.surveys.push({id:DB.surveys.length+1,communityId:currentCommunityId,type:t,title,desc,deadline,created:today,createdBy:cu.id,
-      questions:t==='normal'?editingQuestions.map((q,i)=>({id:i+1,...q,options:[...q.options]})):[],
-      dates:t==='date'?[...editingDates].sort():[]});
-    showPage('surveys');
+    if(t==='normal'&&!editingQuestions.length){ alert('質問を追加してください'); return; }
+    if(t==='date'&&editingDates.size===0){ alert('日程を1つ以上選択してください'); return; }
+    var data={communityId:currentCommunityId,type:t,title:title,desc:desc,deadline:deadline,created:today,createdBy:cu.id,questions:t==='normal'?editingQuestions.map(function(q,i){ return Object.assign({id:i+1},q,{options:q.options.slice()}); }):[],dates:t==='date'?Array.from(editingDates).sort():[],spreadsheetUrl:''};
+    db.collection('surveys').add(data).then(function(ref){ DB.surveys.push(Object.assign({id:ref.id},data)); showPage('surveys'); });
   }
 }
 
-/* Answer */
 function openAnswer(sid,ret){
-  answerReturnPage=ret||'surveys';currentAnswerSurveyId=sid;
-  const s=DB.surveys.find(x=>x.id===sid);
+  answerReturnPage=ret||'surveys'; currentAnswerSurveyId=sid;
+  var s=DB.surveys.find(function(x){ return x.id===sid; });
   document.getElementById('answer-survey-title').textContent=s.title;
   document.getElementById('answer-survey-desc').textContent=s.desc;
   document.getElementById('answer-expired-notice').style.display=isExpired(s)?'flex':'none';
-  Object.keys(attState).forEach(k=>delete attState[k]);
-  let html='';
+  Object.keys(attState).forEach(function(k){ delete attState[k]; });
+  var html='';
   if(s.type==='date'){
-    html=`<div class="att-answer-table"><table>
-      <thead><tr><th>日程</th><th>出席</th><th>遅刻</th><th>欠席</th></tr></thead><tbody>`+
-      s.dates.map(d=>`<tr>
-        <td>${fmtDate(d)}</td>
-        <td><button class="ans-btn" id="ans_${d}_attend" onclick="toggleAns('${d}','attend')">出席</button></td>
-        <td><button class="ans-btn" id="ans_${d}_late" onclick="toggleAns('${d}','late')">遅刻</button></td>
-        <td><button class="ans-btn" id="ans_${d}_absent" onclick="toggleAns('${d}','absent')">欠席</button></td>
-      </tr>`).join('')+
-      `</tbody></table></div><p style="font-size:12px;color:var(--text-secondary)">各日程ごとに1つ選択してください</p>`;
+    html='<div class="att-answer-table"><table><thead><tr><th>日程</th><th>出席</th><th>遅刻</th><th>欠席</th></tr></thead><tbody>'+(s.dates||[]).map(function(d){ return '<tr><td>'+fmtDate(d)+'</td><td><button class="ans-btn" id="ans_'+d+'_attend" onclick="toggleAns(\''+d+'\',\'attend\')">出席</button></td><td><button class="ans-btn" id="ans_'+d+'_late" onclick="toggleAns(\''+d+'\',\'late\')">遅刻</button></td><td><button class="ans-btn" id="ans_'+d+'_absent" onclick="toggleAns(\''+d+'\',\'absent\')">欠席</button></td></tr>'; }).join('')+'</tbody></table></div><p style="font-size:12px;color:var(--text-secondary)">各日程ごとに1つ選択してください</p>';
   } else {
-    html=s.questions.map((q,i)=>`<div class="q-card"><p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">質問 ${i+1}</p><p style="font-size:14px;font-weight:500;margin-bottom:12px">${q.text}</p>${q.type==='radio'?`<div class="radio-group">${q.options.map(o=>`<label class="radio-item"><input type="radio" name="q${q.id}" value="${o}"> ${o}</label>`).join('')}</div>`:`<textarea class="form-input" id="tq${q.id}" placeholder="回答を入力してください"></textarea>`}</div>`).join('');
+    html=(s.questions||[]).map(function(q,i){ return '<div class="q-card"><p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">質問 '+(i+1)+'</p><p style="font-size:14px;font-weight:500;margin-bottom:12px">'+q.text+'</p>'+(q.type==='radio'?'<div class="radio-group">'+(q.options||[]).map(function(o){ return '<label class="radio-item"><input type="radio" name="q'+q.id+'" value="'+o+'"> '+o+'</label>'; }).join('')+'</div>':'<textarea class="form-input" id="tq'+q.id+'" placeholder="回答を入力してください"></textarea>')+'</div>'; }).join('');
   }
   document.getElementById('answer-questions').innerHTML=html;
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-answer').classList.add('active');
 }
+
 function toggleAns(date,choice){
   attState[date]=choice;
-  ['attend','late','absent'].forEach(c=>{
-    const btn=document.getElementById(`ans_${date}_${c}`);
-    if(btn) btn.className='ans-btn'+(attState[date]===c?' sel-'+c:'');
-  });
+  ['attend','late','absent'].forEach(function(c){ var btn=document.getElementById('ans_'+date+'_'+c); if(btn) btn.className='ans-btn'+(attState[date]===c?' sel-'+c:''); });
 }
-function goBackFromAnswer(){showPage(answerReturnPage);}
+function goBackFromAnswer(){ showPage(answerReturnPage); }
+
 function submitAnswer(){
-  const s=DB.surveys.find(x=>x.id===currentAnswerSurveyId);
-  let responses={};
-  if(s.type==='date') responses={...attState};
-  else s.questions.forEach(q=>{if(q.type==='radio'){const r=document.querySelector(`input[name="q${q.id}"]:checked`);responses[q.id]=r?r.value:'';}else{const el=document.getElementById('tq'+q.id);responses[q.id]=el?el.value:'';}});
-  DB.answers.push({userId:cu.id,surveyId:currentAnswerSurveyId,answeredAt:today,responses});
-  showPage(answerReturnPage);
+  var s=DB.surveys.find(function(x){ return x.id===currentAnswerSurveyId; });
+  var responses={};
+  if(s.type==='date'){ Object.keys(attState).forEach(function(k){ responses[k]=attState[k]; }); }
+  else { (s.questions||[]).forEach(function(q){ if(q.type==='radio'){ var r=document.querySelector('input[name="q'+q.id+'"]:checked'); responses[q.id]=r?r.value:''; } else { var el=document.getElementById('tq'+q.id); responses[q.id]=el?el.value:''; } }); }
+  var data={userId:cu.id,surveyId:currentAnswerSurveyId,answeredAt:today,responses:responses};
+  db.collection('answers').add(data).then(function(){
+    DB.answers.push(data);
+    if(GAS_URL&&GAS_URL!=='YOUR_GAS_URL'){
+      fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'addAnswer',surveyTitle:s.title,surveyType:s.type,userName:cu.name,userEmail:cu.email,answeredAt:today,responses:responses,dates:s.dates||[],questions:s.questions||[]})}).catch(function(e){ console.log('GASエラー:',e); });
+    }
+    showPage(answerReturnPage);
+  });
 }
 
 function openDeleteModal(sid){
-  const s=DB.surveys.find(x=>x.id===sid);
-  if(s.createdBy!==cu.id){alert('削除権限がありません');return;}
-  deletingSurveyId=sid;document.getElementById('delete-survey-name').textContent=s.title;openModal('delete-modal');
+  var s=DB.surveys.find(function(x){ return x.id===sid; });
+  if(s.createdBy!==cu.id){ alert('削除権限がありません'); return; }
+  deletingSurveyId=sid; document.getElementById('delete-survey-name').textContent=s.title; openModal('delete-modal');
 }
 function confirmDelete(){
-  DB.surveys=DB.surveys.filter(s=>s.id!==deletingSurveyId);
-  DB.answers=DB.answers.filter(a=>a.surveyId!==deletingSurveyId);
-  closeModal('delete-modal');renderSurveys();
+  db.collection('surveys').doc(deletingSurveyId).delete().then(function(){ DB.surveys=DB.surveys.filter(function(s){ return s.id!==deletingSurveyId; }); closeModal('delete-modal'); renderSurveys(); });
 }
 
-/* Admin */
 function renderAdmin(){
-  const c=DB.communities.find(x=>x.id===currentCommunityId);
-  document.getElementById('admin-sub').textContent=c?`${c.name}の管理画面`:'';
-  const members=communityMembers(),surveys=communitySurveys();
-  document.getElementById('member-tbody').innerHTML=members.map(u=>{
-    const ans=surveys.filter(s=>isAnswered(u.id,s.id)).length;
-    const rate=surveys.length?Math.round(ans/surveys.length*100):0;
-    return `<tr><td>${u.name}</td><td style="color:var(--text-secondary)">${u.email}</td><td><strong>${rate}%</strong> <span style="font-size:12px;color:var(--text-secondary)">(${ans}/${surveys.length})</span></td></tr>`;
-  }).join('');
-  const opts=surveys.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
-  document.getElementById('results-select').innerHTML=opts;
-  document.getElementById('export-select').innerHTML=opts;
-  showResults();
-}
-function switchAdminTab(tab){
-  document.querySelectorAll('#page-admin .tab-btn').forEach((b,i)=>b.classList.toggle('active',['members','results','export'][i]===tab));
-  document.querySelectorAll('#page-admin .tab-section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('admin-tab-'+tab).classList.add('active');
-  if(tab==='export') document.getElementById('csv-preview').style.display='none';
-}
-const ANS_LABEL={attend:'出席',late:'遅刻',absent:'欠席'};
-const ANS_CHIP={attend:'chip-attend',late:'chip-late',absent:'chip-absent'};
-function showResults(){
-  const id=parseInt(document.getElementById('results-select').value);
-  const s=DB.surveys.find(x=>x.id===id);
-  const members=communityMembers();
-  if(!s){document.getElementById('results-content').innerHTML='';return;}
-  let html='';
-  if(s.type==='date'){
-    html=`<div class="summary-wrap"><div class="summary-table-inner"><table>
-      <thead><tr><th>名前</th>${s.dates.map(d=>`<th>${fmtDate(d)}</th>`).join('')}</tr></thead><tbody>`+
-      members.map(u=>{
-        const a=DB.answers.find(x=>x.userId===u.id&&x.surveyId===id);
-        return `<tr><td>${u.name}</td>${s.dates.map(d=>{
-          if(!a) return `<td style="color:var(--text-secondary)">—</td>`;
-          const v=a.responses[d];
-          return v?`<td><span class="count-chip ${ANS_CHIP[v]}">${ANS_LABEL[v]}</span></td>`:`<td style="color:var(--text-secondary)">—</td>`;
-        }).join('')}</tr>`;
-      }).join('')+
-      `</tbody></table></div></div>`;
-    html+=`<p style="font-size:13px;font-weight:600;margin-bottom:8px">日程別集計</p><div style="display:flex;gap:8px;flex-wrap:wrap">`;
-    s.dates.forEach(d=>{
-      const ans=DB.answers.filter(a=>a.surveyId===id);
-      const at=ans.filter(a=>a.responses[d]==='attend').length;
-      const la=ans.filter(a=>a.responses[d]==='late').length;
-      const ab=ans.filter(a=>a.responses[d]==='absent').length;
-      html+=`<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 14px;font-size:13px"><p style="font-weight:600;margin-bottom:6px">${fmtDate(d)}</p><span class="count-chip chip-attend">出席 ${at}</span> <span class="count-chip chip-late">遅刻 ${la}</span> <span class="count-chip chip-absent">欠席 ${ab}</span></div>`;
+  var c=DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  document.getElementById('admin-sub').textContent=c?c.name+'の管理画面':'';
+  var surveys=communitySurveys(), memberIds=c?c.members:[];
+  var memberPromises=memberIds.map(function(uid){ if(DB.userCache[uid]) return Promise.resolve(DB.userCache[uid]); return db.collection('users').doc(uid).get().then(function(snap){ var user=snap.exists?Object.assign({id:uid},snap.data()):{id:uid,name:uid,email:''}; DB.userCache[uid]=user; return user; }); });
+  var answerPromises=surveys.map(function(s){ return db.collection('answers').where('surveyId','==',s.id).get().then(function(snap){ return snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); }); }); });
+  Promise.all(memberPromises).then(function(members){
+    Promise.all(answerPromises).then(function(allAnswerArrays){
+      var allAnswers=[].concat.apply([],allAnswerArrays); DB.answers=allAnswers;
+      document.getElementById('member-tbody').innerHTML=members.map(function(u){ var ans=surveys.filter(function(s){ return allAnswers.some(function(a){ return a.userId===u.id&&a.surveyId===s.id; }); }).length; var rate=surveys.length?Math.round(ans/surveys.length*100):0; return '<tr><td>'+u.name+'</td><td style="color:var(--text-secondary)">'+u.email+'</td><td><strong>'+rate+'%</strong> <span style="font-size:12px;color:var(--text-secondary)">('+ans+'/'+surveys.length+')</span></td></tr>'; }).join('');
+      var opts=surveys.map(function(s){ return '<option value="'+s.id+'">'+s.title+'</option>'; }).join('');
+      document.getElementById('results-select').innerHTML=opts;
+      if(surveys.length) showResults();
     });
-    html+='</div>';
-  } else {
-    html=`<div class="admin-table-wrap"><table><thead><tr><th>ユーザー</th><th>状況</th><th>日時</th></tr></thead><tbody>`+
-    members.map(u=>{const a=DB.answers.find(x=>x.userId===u.id&&x.surveyId===id);return `<tr><td>${u.name}</td><td>${a?'<span class="dot dot-yes"></span>回答済み':'<span class="dot dot-no"></span>未回答'}</td><td style="color:var(--text-secondary)">${a?a.answeredAt:'—'}</td></tr>`;}).join('')+
-    `</tbody></table></div>`;
-  }
-  document.getElementById('results-content').innerHTML=html;
-}
-
-function buildCSV(sid){
-  const s=DB.surveys.find(x=>x.id===sid);
-  const members=communityMembers();
-  let rows=[];
-  if(s.type==='date'){
-    rows=[['名前','メール','回答日時',...s.dates.map(d=>fmtDate(d))],
-      ...members.map(u=>{const a=DB.answers.find(x=>x.userId===u.id&&x.surveyId===sid);return [u.name,u.email,a?a.answeredAt:'未回答',...s.dates.map(d=>a?(ANS_LABEL[a.responses[d]]||'—'):'')];}),
-      ['集計（出席）','','',...s.dates.map(d=>DB.answers.filter(a=>a.surveyId===sid&&a.responses[d]==='attend').length+'人')],
-    ];
-  } else {
-    rows=[['名前','メール','回答日時',...s.questions.map(q=>q.text)],
-      ...members.map(u=>{const a=DB.answers.find(x=>x.userId===u.id&&x.surveyId===sid);return [u.name,u.email,a?a.answeredAt:'未回答',...s.questions.map(q=>a?a.responses[q.id]||'':'')];})
-    ];
-  }
-  return rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-}
-function downloadCSV(){
-  const sid=parseInt(document.getElementById('export-select').value);
-  const s=DB.surveys.find(x=>x.id===sid);
-  const blob=new Blob(['\uFEFF'+buildCSV(sid)],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${s.title}.csv`;a.click();
-}
-function previewCSV(){
-  const sid=parseInt(document.getElementById('export-select').value);
-  document.getElementById('csv-preview-content').textContent=buildCSV(sid).split('\n').slice(0,6).join('\n');
-  document.getElementById('csv-preview').style.display='block';
-}
-
-function searchCommunities(q){
-  const res=document.getElementById('community-search-results');
-  document.getElementById('join-pw-section').style.display='none';
-  if(!q.trim()){res.innerHTML='';return;}
-  const found=DB.communities.filter(c=>c.name.includes(q)&&!c.members.includes(cu.id));
-  if(!found.length){res.innerHTML='<p style="font-size:13px;color:var(--text-secondary);padding:10px">見つかりませんでした</p>';return;}
-  res.className='search-results';
-  res.innerHTML=found.map(c=>`<div class="search-result-item" onclick="selectCommunityToJoin(${c.id},'${c.name}')"><span>${c.icon} ${c.name}</span><span style="font-size:12px;color:var(--text-secondary)">${DB.surveys.filter(s=>s.communityId===c.id).length}件</span></div>`).join('');
-}
-function selectCommunityToJoin(id,name){
-  joinTargetId=id;document.getElementById('join-target-name').textContent=`「${name}」に参加`;
-  document.getElementById('join-password').value='';document.getElementById('join-pw-error').style.display='none';
-  document.getElementById('join-pw-section').style.display='block';document.getElementById('community-search-results').innerHTML='';
-}
-function joinCommunity(){
-  const pw=document.getElementById('join-password').value;const errEl=document.getElementById('join-pw-error');
-  const c=DB.communities.find(x=>x.id===joinTargetId);
-  if(!pw){errEl.textContent='パスワードを入力してください';errEl.style.display='block';return;}
-  if(c.password!==pw){errEl.textContent='パスワードが違います';errEl.style.display='block';return;}
-  c.members.push(cu.id);closeModal('join-modal');renderMyCommunities();
-}
-function selectIcon(el,icon){
-  selectedIcon=icon;
-  document.querySelectorAll('#icon-picker span').forEach(s=>s.style.border='2px solid transparent');
-  el.style.border='2px solid var(--green)';
-}
-function createCommunity(){
-  const name=document.getElementById('cc-name').value.trim();
-  const desc=document.getElementById('cc-desc').value.trim();
-  const pw=document.getElementById('cc-password').value;const errEl=document.getElementById('cc-error');
-  if(!name){errEl.textContent='コミュニティ名を入力してください';errEl.style.display='block';return;}
-  if(!pw){errEl.textContent='パスワードを設定してください';errEl.style.display='block';return;}
-  DB.communities.push({id:DB.communities.length+1,name,desc,icon:selectedIcon,password:pw,createdBy:cu.id,members:[cu.id]});
-  closeModal('create-community-modal');
-  document.getElementById('cc-name').value='';document.getElementById('cc-desc').value='';document.getElementById('cc-password').value='';
-  errEl.style.display='none';renderMyCommunities();
-}
-// 三点メニュー開閉
-function toggleCommunityMenu(menuId){
-  // 他のメニューを閉じる
-  document.querySelectorAll('.community-dropdown').forEach(function(d){
-    if(d.id!==menuId) d.classList.remove('open');
   });
-  document.getElementById(menuId).classList.toggle('open');
 }
-// メニュー外クリックで閉じる
-document.addEventListener('click', function(){
-  document.querySelectorAll('.community-dropdown').forEach(function(d){ d.classList.remove('open'); });
-});
 
-// コミュニティ編集
-var editingCommunityId = null;
-var editCommunityIconFile = null;
-var editCommunityIconDataUrl = null;
+function switchAdminTab(tab){
+  document.querySelectorAll('#page-admin .tab-btn').forEach(function(b,i){ b.classList.toggle('active',['members','results'][i]===tab); });
+  document.querySelectorAll('#page-admin .tab-section').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('admin-tab-'+tab).classList.add('active');
+}
+
+function showResults(){
+  var id=document.getElementById('results-select').value;
+  var s=DB.surveys.find(function(x){ return x.id===id; });
+  if(!s){ document.getElementById('results-content').innerHTML=''; return; }
+  var c=DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  var memberIds=c?c.members:[];
+  db.collection('answers').where('surveyId','==',id).get().then(function(aSnap){
+    var answers=aSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+    var html='';
+    if(s.type==='date'){
+      html='<div class="summary-wrap"><div class="summary-table-inner"><table><thead><tr><th>名前</th>'+(s.dates||[]).map(function(d){ return '<th>'+fmtDate(d)+'</th>'; }).join('')+'</tr></thead><tbody>'+memberIds.map(function(uid){ var a=answers.find(function(x){ return x.userId===uid; }); var name=DB.userCache[uid]?DB.userCache[uid].name:uid; return '<tr><td>'+name+'</td>'+(s.dates||[]).map(function(d){ if(!a) return '<td style="color:var(--text-secondary)">—</td>'; var v=a.responses[d]; return v?'<td><span class="count-chip '+ANS_CHIP[v]+'">'+ANS_LABEL[v]+'</span></td>':'<td style="color:var(--text-secondary)">—</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table></div></div>';
+      html+='<p style="font-size:13px;font-weight:600;margin-bottom:8px;margin-top:14px">日程別集計</p><div style="display:flex;gap:8px;flex-wrap:wrap">';
+      (s.dates||[]).forEach(function(d){ var at=answers.filter(function(a){ return a.responses[d]==='attend'; }).length; var la=answers.filter(function(a){ return a.responses[d]==='late'; }).length; var ab=answers.filter(function(a){ return a.responses[d]==='absent'; }).length; html+='<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 14px;font-size:13px"><p style="font-weight:600;margin-bottom:6px">'+fmtDate(d)+'</p><span class="count-chip chip-attend">出席 '+at+'</span> <span class="count-chip chip-late">遅刻 '+la+'</span> <span class="count-chip chip-absent">欠席 '+ab+'</span></div>'; });
+      html+='</div>';
+    } else {
+      html='<div class="admin-table-wrap"><table><thead><tr><th>ユーザー</th><th>状況</th><th>日時</th></tr></thead><tbody>'+memberIds.map(function(uid){ var a=answers.find(function(x){ return x.userId===uid; }); var name=DB.userCache[uid]?DB.userCache[uid].name:uid; return '<tr><td>'+name+'</td><td>'+(a?'<span class="dot dot-yes"></span>回答済み':'<span class="dot dot-no"></span>未回答')+'</td><td style="color:var(--text-secondary)">'+(a?a.answeredAt:'—')+'</td></tr>'; }).join('')+'</tbody></table></div>';
+    }
+    html+=s.spreadsheetUrl?'<a href="'+s.spreadsheetUrl+'" target="_blank" class="btn-green" style="display:inline-block;margin-top:14px;text-decoration:none">スプレッドシートを開く</a>':'<button class="btn-green" style="margin-top:14px" onclick="createSpreadsheet(\''+s.id+'\')">スプレッドシートを自動作成</button>';
+    document.getElementById('results-content').innerHTML=html;
+  });
+}
+
+function createSpreadsheet(surveyId){
+  if(!GOOGLE_CLIENT_ID||GOOGLE_CLIENT_ID==='YOUR_GOOGLE_CLIENT_ID'){ alert('Google OAuthクライアントIDが設定されていません'); return; }
+  var tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',callback:function(response){ if(response.error){ alert('Googleログインに失敗しました：'+response.error); return; } googleAccessToken=response.access_token; _doCreateSpreadsheet(surveyId); }});
+  tokenClient.requestAccessToken();
+}
+
+function _doCreateSpreadsheet(surveyId){
+  var s=DB.surveys.find(function(x){ return x.id===surveyId; });
+  var c=DB.communities.find(function(x){ return x.id===currentCommunityId; });
+  var memberIds=c?c.members:[];
+  db.collection('answers').where('surveyId','==',surveyId).get().then(function(aSnap){
+    var answers=aSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+    var values=[];
+    if(s.type==='date'){ values.push(['名前','回答日時'].concat((s.dates||[]).map(fmtDate))); memberIds.forEach(function(uid){ var a=answers.find(function(x){ return x.userId===uid; }); var name=DB.userCache[uid]?DB.userCache[uid].name:uid; values.push([name,a?a.answeredAt:'未回答'].concat((s.dates||[]).map(function(d){ return a?(ANS_LABEL[a.responses[d]]||'—'):''; }))); }); values.push(['集計（出席）',''].concat((s.dates||[]).map(function(d){ return answers.filter(function(a){ return a.responses[d]==='attend'; }).length+'人'; }))); }
+    else { values.push(['名前','回答日時'].concat((s.questions||[]).map(function(q){ return q.text; }))); memberIds.forEach(function(uid){ var a=answers.find(function(x){ return x.userId===uid; }); var name=DB.userCache[uid]?DB.userCache[uid].name:uid; values.push([name,a?a.answeredAt:'未回答'].concat((s.questions||[]).map(function(q){ return a?a.responses[q.id]||'':''; }))); }); }
+    fetch('https://sheets.googleapis.com/v4/spreadsheets',{method:'POST',headers:{'Authorization':'Bearer '+googleAccessToken,'Content-Type':'application/json'},body:JSON.stringify({properties:{title:s.title},sheets:[{properties:{title:'回答データ'}}]})})
+    .then(function(r){ return r.json(); }).then(function(sheet){
+      if(sheet.error){ alert('スプレッドシート作成エラー：'+sheet.error.message); return; }
+      var spreadsheetId=sheet.spreadsheetId, spreadsheetUrl=sheet.spreadsheetUrl;
+      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+spreadsheetId+'/values/%E5%9B%9E%E7%AD%94%E3%83%87%E3%83%BC%E3%82%BF!A1:Z1000?valueInputOption=RAW',{method:'PUT',headers:{'Authorization':'Bearer '+googleAccessToken,'Content-Type':'application/json'},body:JSON.stringify({values:values})}).then(function(){
+        return db.collection('surveys').doc(surveyId).update({spreadsheetUrl:spreadsheetUrl}).then(function(){ var survey=DB.surveys.find(function(x){ return x.id===surveyId; }); if(survey) survey.spreadsheetUrl=spreadsheetUrl; showResults(); setTimeout(function(){ window.open(spreadsheetUrl,'_blank'); },500); });
+      });
+    }).catch(function(e){ alert('エラーが発生しました：'+e.message); });
+  });
+}
+
+function previewIcon(input){
+  if(!input.files||!input.files[0]) return;
+  communityIconFile=input.files[0];
+  var reader=new FileReader();
+  reader.onload=function(e){ communityIconDataUrl=e.target.result; document.getElementById('cc-icon-preview').innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover">'; };
+  reader.readAsDataURL(communityIconFile);
+}
 
 function openEditCommunityModal(cid){
-  editingCommunityId = cid;
-  editCommunityIconFile = null;
-  editCommunityIconDataUrl = null;
-  var c = DB.communities.find(function(x){ return x.id===cid; });
-  document.getElementById('ec-name').value = c.name;
-  document.getElementById('ec-desc').value = c.desc||'';
-  var preview = document.getElementById('ec-icon-preview');
-  if(c.iconUrl){
-    preview.innerHTML = '<img src="'+c.iconUrl+'" style="width:100%;height:100%;object-fit:cover">';
-  } else {
-    preview.innerHTML = '<span class="icon-preview-placeholder">'+c.name[0]+'</span>';
-  }
+  editingCommunityId=cid; editCommunityIconFile=null; editCommunityIconDataUrl=null;
+  var c=DB.communities.find(function(x){ return x.id===cid; });
+  document.getElementById('ec-name').value=c.name;
+  document.getElementById('ec-desc').value=c.desc||'';
+  var preview=document.getElementById('ec-icon-preview');
+  if(c.iconUrl) preview.innerHTML='<img src="'+c.iconUrl+'" style="width:100%;height:100%;object-fit:cover">';
+  else preview.innerHTML='<span class="icon-preview-placeholder">'+c.name[0]+'</span>';
   document.getElementById('ec-error').style.display='none';
   openModal('edit-community-modal');
 }
 
 function previewEditIcon(input){
   if(!input.files||!input.files[0]) return;
-  editCommunityIconFile = input.files[0];
-  var reader = new FileReader();
-  reader.onload = function(e){
-    editCommunityIconDataUrl = e.target.result;
-    document.getElementById('ec-icon-preview').innerHTML = '<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover">';
-  };
+  editCommunityIconFile=input.files[0];
+  var reader=new FileReader();
+  reader.onload=function(e){ editCommunityIconDataUrl=e.target.result; document.getElementById('ec-icon-preview').innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover">'; };
   reader.readAsDataURL(editCommunityIconFile);
 }
 
 function saveEditCommunity(){
-  var name = document.getElementById('ec-name').value.trim();
-  var desc = document.getElementById('ec-desc').value.trim();
-  var errEl = document.getElementById('ec-error');
+  var name=document.getElementById('ec-name').value.trim();
+  var desc=document.getElementById('ec-desc').value.trim();
+  var errEl=document.getElementById('ec-error');
   if(!name){ errEl.textContent='コミュニティ名を入力してください'; errEl.style.display='block'; return; }
-
-  function doSave(iconUrl){
-    var updateData = {name:name, desc:desc};
-    if(iconUrl !== null) updateData.iconUrl = iconUrl;
-    db.collection('communities').doc(editingCommunityId).update(updateData).then(function(){
-      var c = DB.communities.find(function(x){ return x.id===editingCommunityId; });
-      if(c){ c.name=name; c.desc=desc; if(iconUrl!==null) c.iconUrl=iconUrl; }
-      closeModal('edit-community-modal');
-      renderMyCommunities();
-    });
-  }
-
-  if(editCommunityIconFile){
-    var ref = storage.ref('community-icons/'+Date.now()+'_'+editCommunityIconFile.name);
-    ref.put(editCommunityIconFile).then(function(){
-      ref.getDownloadURL().then(function(url){ doSave(url); });
-    }).catch(function(){
-      doSave(editCommunityIconDataUrl||null);
-    });
-  } else {
-    doSave(null);
-  }
+  function doSave(iconUrl){ var updateData={name:name,desc:desc}; if(iconUrl!==null) updateData.iconUrl=iconUrl; db.collection('communities').doc(editingCommunityId).update(updateData).then(function(){ var c=DB.communities.find(function(x){ return x.id===editingCommunityId; }); if(c){ c.name=name; c.desc=desc; if(iconUrl!==null) c.iconUrl=iconUrl; } closeModal('edit-community-modal'); renderMyCommunities(); }); }
+  if(editCommunityIconFile){ var ref=storage.ref('community-icons/'+Date.now()+'_'+editCommunityIconFile.name); ref.put(editCommunityIconFile).then(function(){ ref.getDownloadURL().then(function(url){ doSave(url); }); }).catch(function(){ doSave(editCommunityIconDataUrl||null); }); }
+  else doSave(null);
 }
 
-// コミュニティ削除
-var deletingCommunityId = null;
-
 function openDeleteCommunityModal(cid){
-  var c = DB.communities.find(function(x){ return x.id===cid; });
-  deletingCommunityId = cid;
-  document.getElementById('delete-community-name').textContent = c.name;
+  deletingCommunityId=cid;
+  var c=DB.communities.find(function(x){ return x.id===cid; });
+  document.getElementById('delete-community-name').textContent=c.name;
   openModal('delete-community-modal');
 }
 
 function confirmDeleteCommunity(){
-  db.collection('communities').doc(deletingCommunityId).delete().then(function(){
-    DB.communities = DB.communities.filter(function(c){ return c.id!==deletingCommunityId; });
-    closeModal('delete-community-modal');
-    renderMyCommunities();
+  db.collection('communities').doc(deletingCommunityId).delete().then(function(){ DB.communities=DB.communities.filter(function(c){ return c.id!==deletingCommunityId; }); closeModal('delete-community-modal'); renderMyCommunities(); });
+}
+
+function searchCommunities(q){
+  var res=document.getElementById('community-search-results');
+  document.getElementById('join-pw-section').style.display='none';
+  if(!q.trim()){ res.innerHTML=''; return; }
+  db.collection('communities').get().then(function(snap){
+    var found=snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); }).filter(function(c){ return c.name.includes(q)&&!c.members.includes(cu.id); });
+    if(!found.length){ res.innerHTML='<p style="font-size:13px;color:var(--text-secondary);padding:10px">見つかりませんでした</p>'; return; }
+    res.className='search-results';
+    res.innerHTML=found.map(function(c){ var iconHtml=c.iconUrl?'<img src="'+c.iconUrl+'" alt="icon">':'<span style="font-size:16px">'+c.name[0]+'</span>'; return '<div class="search-result-item" onclick="selectCommunityToJoin(\''+c.id+'\',\''+c.name+'\')" ><div class="search-result-icon">'+iconHtml+'</div><span>'+c.name+'</span></div>'; }).join('');
   });
 }
-function openModal(id){document.getElementById(id).style.display='flex';}
-function closeModal(id){document.getElementById(id).style.display='none';}
+
+function selectCommunityToJoin(id,name){
+  joinTargetId=id; document.getElementById('join-target-name').textContent='「'+name+'」に参加';
+  document.getElementById('join-password').value=''; document.getElementById('join-pw-error').style.display='none';
+  document.getElementById('join-pw-section').style.display='block'; document.getElementById('community-search-results').innerHTML='';
+}
+
+function joinCommunity(){
+  var pw=document.getElementById('join-password').value, errEl=document.getElementById('join-pw-error');
+  db.collection('communities').doc(joinTargetId).get().then(function(snap){
+    var c=snap.data();
+    if(!pw){ errEl.textContent='パスワードを入力してください'; errEl.style.display='block'; return; }
+    if(c.password!==pw){ errEl.textContent='パスワードが違います'; errEl.style.display='block'; return; }
+    var members=c.members||[]; if(!members.includes(cu.id)) members.push(cu.id);
+    db.collection('communities').doc(joinTargetId).update({members:members}).then(function(){ closeModal('join-modal'); renderMyCommunities(); });
+  });
+}
+
+function createCommunity(){
+  var name=document.getElementById('cc-name').value.trim(), desc=document.getElementById('cc-desc').value.trim(), pw=document.getElementById('cc-password').value, errEl=document.getElementById('cc-error');
+  if(!name){ errEl.textContent='コミュニティ名を入力してください'; errEl.style.display='block'; return; }
+  if(!pw){ errEl.textContent='パスワードを設定してください'; errEl.style.display='block'; return; }
+  function saveCommunityData(iconUrl){ var data={name:name,desc:desc,iconUrl:iconUrl||'',password:pw,createdBy:cu.id,members:[cu.id],created:today}; db.collection('communities').add(data).then(function(ref){ DB.communities.push(Object.assign({id:ref.id},data)); closeModal('create-community-modal'); document.getElementById('cc-name').value=''; document.getElementById('cc-desc').value=''; document.getElementById('cc-password').value=''; document.getElementById('cc-icon-preview').innerHTML='<span class="icon-preview-placeholder">?</span>'; communityIconFile=null; communityIconDataUrl=null; errEl.style.display='none'; renderMyCommunities(); }); }
+  if(communityIconFile){ var ref=storage.ref('community-icons/'+Date.now()+'_'+communityIconFile.name); ref.put(communityIconFile).then(function(){ ref.getDownloadURL().then(function(url){ saveCommunityData(url); }); }).catch(function(){ saveCommunityData(communityIconDataUrl||''); }); }
+  else saveCommunityData('');
+}
+
+function openModal(id){ document.getElementById(id).style.display='flex'; }
+function closeModal(id){ document.getElementById(id).style.display='none'; }
 </script>
 </body>
 </html>
